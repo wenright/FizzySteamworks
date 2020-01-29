@@ -1,21 +1,20 @@
 # FizzySteamyMirror
 
-This is a community maintained repo forked from [FizzCube](https://github.com/FizzCube/FizzySteamyMirror). Mirror [docs](https://mirror-networking.com/docs/Transports/Fizzy.html).
+This is a community maintained repo forked from [RayStorm](https://github.com/Chykary/FizzySteamyMirror). Mirror [docs](https://mirror-networking.com/docs/Transports/Fizzy.html).
 
 FizzySteamyMirror brings together [Steam](https://store.steampowered.com/) and [Mirror](https://github.com/vis2k/Mirror) utilising Async of a Steam P2P network transport layer for **Mirror**.
 
 ## Dependencies
-If you want an easy import, skip the steps bellow & download the **[unitypackage](https://github.com/Raystorms/FizzySteamyMirror/releases)**, it has Steamworks.Net already included. 
-
-**Note: If you already have Steamworks.Net in your project, you might need to delete either your import or the one included in the release.**
+**Note: SteamWorks.NET is packed with this transport.**
 
 Both of these projects need to be installed and working before you can use this transport.
 1. [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) FizzySteamyMirror relies on Steamworks.NET to communicate with the [Steamworks API](https://partner.steamgames.com/doc/sdk). **Requires .Net 4.x**  
-2. [Mirror](https://github.com/vis2k/Mirror) FizzySteamyMirror is also obviously dependant on Mirror which is a streamline, bug fixed, maintained version of UNET for Unity. **Recommended [Stable Version](https://assetstore.unity.com/packages/tools/network/mirror-129321)**
+2. [Mirror](https://github.com/vis2k/Mirror) FizzySteamyMirror is also obviously dependant on Mirror which is a streamline, bug fixed, maintained version of UNET for Unity.
 
 ## Setting Up
 
-1. install the dependencies **[Download the unitypackage](https://github.com/Raystorms/FizzySteamyMirror/releases)**
+1. Install Mirror (Requires Mirror 8.0+) from the Unity asset store or grab a unitypackage here: **[Download Mirror](https://github.com/vis2k/Mirror/releases)**
+3. Install the unitypackage from the release section: **[Download FizzySteamMirror] (https://github.com/Chykary/FizzySteamyMirror/releases)**
 2. Create a empty object in your scene and attach the **"Steam Manager"** script to it.
 3. In your **"NetworkManager"** object replace **"Telepathy"** script with **"FizzySteamyMirror"** script.
 
@@ -25,7 +24,7 @@ Both of these projects need to be installed and working before you can use this 
 2. When running the game make sure you have placed it into steam as a **Non-Steam Game** **Note: This is not required, but some have reported their steam SDK not working without doing this.**
 
 **Note: The 480(Spacewar) appid is a very grey area, technically, it's not allowed but they don't really do anything about it. When you have your own appid from steam then replace the 480 with your own game appid.
-If you know a better way around this please make a [Issue ticket.](https://github.com/Raystorms/FizzySteamyMirror/issues)**
+If you know a better way around this please make a [Issue ticket.](https://github.com/Chykary/FizzySteamyMirror/issues)**
 
 ## Host
 To be able to have your game working you need to make sure you have steam running in the background. 

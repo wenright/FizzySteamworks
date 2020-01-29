@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System;
-using Steamworks;
 
 namespace Mirror.FizzySteam
 {
@@ -115,17 +114,15 @@ namespace Mirror.FizzySteam
             return SteamNetworking.ReadP2PPacket(receiveBufferInternal, 1, out readPacketSize, out clientSteamID, SEND_INTERNAL);
         }
 
-        protected void Send(CSteamID host, byte[] msgBuffer, EP2PSend sendType, int channel)
+        protected void Send(CSteamID host, byte[] msgBuffer, int channel)
         {
+            Debug.Assert(channel <= channels.Length, $"Channel {channel} not configured for FizzySteamMirror.");
             if (!SteamManager.Initialized)
             {
                 throw new ObjectDisposedException("Steamworks");
             }
-            if (channel >= channels.Length)
-            {
-                channel = 0;
-            }
-            SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, sendType, channel);
+
+            SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, channels[channel], channel);
         }
 
         protected bool Receive(out uint readPacketSize, out CSteamID clientSteamID, out byte[] receiveBuffer, int channel)
@@ -156,35 +153,5 @@ namespace Mirror.FizzySteam
             }
             SteamNetworking.CloseP2PSessionWithUser(clientSteamID);
         }
-
-        public uint GetMaxPacketSize(EP2PSend sendType)
-        {
-            switch (sendType)
-            {
-                case EP2PSend.k_EP2PSendUnreliable:
-                case EP2PSend.k_EP2PSendUnreliableNoDelay:
-                    return 1200; //UDP like - MTU size.
-
-                case EP2PSend.k_EP2PSendReliable:
-                case EP2PSend.k_EP2PSendReliableWithBuffering:
-                    return maxPacketSize; //Reliable message send. Can send up to 1MB of data in a single message.
-
-                default:
-                    Debug.LogError("Unknown type so uknown max size");
-                    return 0;
-            }
-
-        }
-
-        protected EP2PSend channelToSendType(int channelId)
-        {
-            if (channelId >= channels.Length)
-            {
-                Debug.LogError("Unknown channel id, please set it up in the component, will now send reliably");
-                return EP2PSend.k_EP2PSendReliable;
-            }
-            return channels[channelId];
-        }
-
     }
 }

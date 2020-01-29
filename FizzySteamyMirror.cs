@@ -1,7 +1,6 @@
-using UnityEngine;
-using Steamworks;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Mirror.FizzySteam
 {
@@ -22,11 +21,7 @@ namespace Mirror.FizzySteam
         {
             Common.SetMessageUpdateRate(messageUpdateRate);
 
-            if (channels == null)
-            {
-                channels = new EP2PSend[2] { EP2PSend.k_EP2PSendReliable, EP2PSend.k_EP2PSendUnreliable };
-            }
-            channels[0] = EP2PSend.k_EP2PSendReliable;
+            Debug.Assert(channels != null && channels.Length > 0, "No channel configured for FizzySteamMirror.");
             Common.channels = channels;
         }
 
@@ -74,23 +69,19 @@ namespace Mirror.FizzySteam
 
         public override int GetMaxPacketSize(int channelId)
         {
-            if (channelId >= channels.Length)
-            {
-                channelId = 0;
-            }
+            channelId = Math.Min(channelId, channels.Length - 1);
+
             EP2PSend sendMethod = channels[channelId];
             switch (sendMethod)
             {
                 case EP2PSend.k_EP2PSendUnreliable:
-                    return 1200; //UDP like - MTU size.
                 case EP2PSend.k_EP2PSendUnreliableNoDelay:
-                    return 1200; //UDP like - MTU size.
+                    return 1200;
                 case EP2PSend.k_EP2PSendReliable:
-                    return 1048576; //Reliable message send. Can send up to 1MB of data in a single message.
                 case EP2PSend.k_EP2PSendReliableWithBuffering:
-                    return 1048576; //Reliable message send. Can send up to 1MB of data in a single message.
+                    return 1048576;
                 default:
-                    return 1200; //UDP like - MTU size.
+                    throw new NotSupportedException();
             }
         }
 

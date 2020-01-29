@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-using Steamworks;
 using System.Threading.Tasks;
 
 namespace Mirror.FizzySteam
@@ -260,15 +259,14 @@ namespace Mirror.FizzySteam
             CloseP2PSessionWithUser(steamClient.steamID);
         }
 
-        public bool Send(List<int> connectionIds, byte[] data, int channelId = 0)
+        public bool Send(List<int> connectionIds, byte[] data, int channelId)
         {
             for (int i = 0; i < connectionIds.Count; i++)
             {
                 if (steamConnectionMap.Contains(connectionIds[i]))
                 {
                     SteamClient steamClient = steamConnectionMap[connectionIds[i]];
-                    //will default to reliable at channel 0 if sent on an unknown channel
-                    Send(steamClient.steamID, data, channelToSendType(channelId), channelId >= channels.Length ? 0 : channelId);
+                    Send(steamClient.steamID, data, channelId);
                 }
                 else
                 {

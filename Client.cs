@@ -1,5 +1,4 @@
-﻿using Steamworks;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -213,7 +212,7 @@ namespace Mirror.FizzySteam
         {
             if (Connected)
             {
-                Send(hostSteamID, data, channelToSendType(channelId), channelId);
+                Send(hostSteamID, data, channelId);
                 return true;
             }
             else
@@ -222,6 +221,5 @@ namespace Mirror.FizzySteam
                 return false;
             }
         }
-
     }
 }
