@@ -16,7 +16,8 @@ namespace Mirror.FizzySteam
         private void Start()
         {
             Common.secondsBetweenPolls = messageUpdateRate;
-            if (channels == null) {
+            if (channels == null)
+            {
                 channels = new EP2PSend[2] { EP2PSend.k_EP2PSendReliable, EP2PSend.k_EP2PSendUnreliable };
             }
             channels[0] = EP2PSend.k_EP2PSendReliable;
@@ -53,17 +54,17 @@ namespace Mirror.FizzySteam
             server.Listen();
         }
 
+        public override Uri ServerUri() => throw new NotSupportedException();
+
         public virtual void ServerStartWebsockets(string address, int port, int maxConnections)
         {
             Debug.LogError("FizzySteamyMirror.ServerStartWebsockets not possible!");
         }
 
-        public override bool ServerSend(List<int> connectionIds, int channelId, ArraySegment<byte> segment) { return server.Send(connectionIds, segment.Array, channelId); }
+        public override bool ServerSend(List<int> connectionIds, int channelId, ArraySegment<byte> segment) => server.Send(connectionIds, segment.Array, channelId);
 
-        public override bool ServerDisconnect(int connectionId)
-        {
-            return server.Disconnect(connectionId);
-        }
+        public override bool ServerDisconnect(int connectionId) => server.Disconnect(connectionId);
+
 
         public override string ServerGetClientAddress(int connectionId) { return server.ServerGetClientAddress(connectionId); }
         public override void ServerStop() { server.Stop(); }
@@ -75,12 +76,15 @@ namespace Mirror.FizzySteam
             server.Stop();
         }
 
-        public override int GetMaxPacketSize(int channelId) {
-            if (channelId >= channels.Length) {
+        public override int GetMaxPacketSize(int channelId)
+        {
+            if (channelId >= channels.Length)
+            {
                 channelId = 0;
             }
             EP2PSend sendMethod = channels[channelId];
-            switch (sendMethod) {
+            switch (sendMethod)
+            {
                 case EP2PSend.k_EP2PSendUnreliable:
                     return 1200; //UDP like - MTU size.
                 case EP2PSend.k_EP2PSendUnreliableNoDelay:
@@ -105,5 +109,5 @@ namespace Mirror.FizzySteam
                 return false;
             }
         }
-  }
+    }
 }
