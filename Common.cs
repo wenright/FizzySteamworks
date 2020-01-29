@@ -6,11 +6,7 @@ namespace Mirror.FizzySteam
 {
     public class Common
     {
-        protected enum SteamChannels : int
-        {
-            SEND_DATA,
-            SEND_INTERNAL = 100
-        }
+        private const int SEND_INTERNAL = 100;
 
         protected enum InternalMessages : byte
         {
@@ -19,7 +15,7 @@ namespace Mirror.FizzySteam
             DISCONNECT
         }
 
-        public static float secondsBetweenPolls = 0.03333f;
+        protected static TimeSpan updateInterval { get; private set; } = TimeSpan.FromMilliseconds(35);
 
         //this is a callback from steam that gets registered and called when the server receives new connections
         private Callback<P2PSessionRequest_t> callback_OnNewConnection = null;
@@ -34,7 +30,9 @@ namespace Mirror.FizzySteam
         readonly static protected uint maxPacketSize = 1048576;
         readonly protected byte[] receiveBufferInternal = new byte[1];
 
-        protected void deinitialise()
+        public static void SetMessageUpdateRate(int milliseconds) => updateInterval = TimeSpan.FromMilliseconds(milliseconds);
+
+        protected void Dispose()
         {
             if (callback_OnNewConnection == null)
             {
@@ -105,7 +103,7 @@ namespace Mirror.FizzySteam
             {
                 throw new ObjectDisposedException("Steamworks");
             }
-            SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, EP2PSend.k_EP2PSendReliable, (int)SteamChannels.SEND_INTERNAL);
+            SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, EP2PSend.k_EP2PSendReliable, SEND_INTERNAL);
         }
 
         protected bool ReceiveInternal(out uint readPacketSize, out CSteamID clientSteamID)
@@ -114,7 +112,7 @@ namespace Mirror.FizzySteam
             {
                 throw new ObjectDisposedException("Steamworks");
             }
-            return SteamNetworking.ReadP2PPacket(receiveBufferInternal, 1, out readPacketSize, out clientSteamID, (int)SteamChannels.SEND_INTERNAL);
+            return SteamNetworking.ReadP2PPacket(receiveBufferInternal, 1, out readPacketSize, out clientSteamID, SEND_INTERNAL);
         }
 
         protected void Send(CSteamID host, byte[] msgBuffer, EP2PSend sendType, int channel)

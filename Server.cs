@@ -159,7 +159,7 @@ namespace Mirror.FizzySteam
                     }
 
                     //not got a message - wait a bit more
-                    await Task.Delay(TimeSpan.FromSeconds(secondsBetweenPolls));
+                    await Task.Delay(updateInterval);
                 }
             }
             catch (ObjectDisposedException) { }
@@ -204,7 +204,7 @@ namespace Mirror.FizzySteam
                         }
                     }
                     //not got a message - wait a bit more
-                    await Task.Delay(TimeSpan.FromSeconds(secondsBetweenPolls));
+                    await Task.Delay(updateInterval);
                 }
             }
             catch (ObjectDisposedException) { }
@@ -223,7 +223,7 @@ namespace Mirror.FizzySteam
             }
 
             Active = false;
-            deinitialise();
+            Dispose();
             Debug.Log("Server Stop Finished");
         }
 

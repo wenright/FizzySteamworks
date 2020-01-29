@@ -1,105 +1,227 @@
-﻿using UnityEngine;
-using Steamworks;
+﻿using Steamworks;
 using System;
-using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Mirror.FizzySteam
 {
-    [HelpURL("https://github.com/Chykary/FizzySteamyMirror")]
-    public class FizzySteamyMirror : Transport
+    public class Client : Common
     {
-        protected FizzySteam.Client client = new FizzySteam.Client();
-        protected FizzySteam.Server server = new FizzySteam.Server();
-        public float messageUpdateRate = 0.03333f;
-        public EP2PSend[] channels = new EP2PSend[2] { EP2PSend.k_EP2PSendReliable, EP2PSend.k_EP2PSendUnreliable };
-        public int MaxConnections = 16;
-        public int Timeout = 25;
+        public event Action<Exception> OnReceivedError;
+        public event Action<byte[], int> OnReceivedData;
+        public event Action OnConnected;
+        public event Action OnDisconnected;
 
-        private void Start()
+        public TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(25);
+
+        private CSteamID hostSteamID = CSteamID.Nil;
+        private TaskCompletionSource<Task> connectedComplete;
+        private CancellationTokenSource cancelToken;
+
+        public bool Connected { get; private set; }
+
+        public async void Connect(string host)
         {
-            Common.secondsBetweenPolls = messageUpdateRate;
-            if (channels == null)
+            cancelToken = new CancellationTokenSource();
+
+            if (Connected)
             {
-                channels = new EP2PSend[2] { EP2PSend.k_EP2PSendReliable, EP2PSend.k_EP2PSendUnreliable };
+                Debug.LogError("Client already connected.");
+                OnReceivedError?.Invoke(new Exception("Client already connected"));
+                return;
             }
-            channels[0] = EP2PSend.k_EP2PSendReliable;
-            Common.channels = channels;
-        }
 
-        public FizzySteamyMirror()
-        {
-            // dispatch the events from the server
-            server.OnConnected += (id) => OnServerConnected?.Invoke(id);
-            server.OnDisconnected += (id) => OnServerDisconnected?.Invoke(id);
-            server.OnReceivedData += (id, data, channel) => OnServerDataReceived?.Invoke(id, new ArraySegment<byte>(data), channel);
-            server.OnReceivedError += (id, exception) => OnServerError?.Invoke(id, exception);
+            initialise();
 
-            // dispatch events from the client
-            client.OnConnected += () => OnClientConnected?.Invoke();
-            client.OnDisconnected += () => OnClientDisconnected?.Invoke();
-            client.OnReceivedData += (data, channel) => OnClientDataReceived?.Invoke(new ArraySegment<byte>(data), channel);
-            client.OnReceivedError += (exception) => OnClientError?.Invoke(exception);
-            client.ConnectionTimeout = TimeSpan.FromSeconds(Timeout);
-
-            Debug.Log("FizzySteamyMirror initialized!");
-        }
-
-        // client
-        public override bool ClientConnected() => client.Connected;
-        public override void ClientConnect(string address) => client.Connect(address);
-        public override bool ClientSend(int channelId, ArraySegment<byte> segment) => client.Send(segment.Array, channelId);
-        public override void ClientDisconnect() => client.Disconnect();
-
-        // server
-        public override bool ServerActive() => server.Active;
-        public override void ServerStart() => server.Listen(MaxConnections);
-
-
-        public override Uri ServerUri() => throw new NotSupportedException();
-
-        public override bool ServerSend(List<int> connectionIds, int channelId, ArraySegment<byte> segment) => server.Send(connectionIds, segment.Array, channelId);
-        public override bool ServerDisconnect(int connectionId) => server.Disconnect(connectionId);
-        public override string ServerGetClientAddress(int connectionId) => server.ServerGetClientAddress(connectionId);
-        public override void ServerStop() => server.Stop();
-
-        public override void Shutdown()
-        {
-            client.Disconnect();
-            server.Stop();
-        }
-
-        public override int GetMaxPacketSize(int channelId)
-        {
-            if (channelId >= channels.Length)
-            {
-                channelId = 0;
-            }
-            EP2PSend sendMethod = channels[channelId];
-            switch (sendMethod)
-            {
-                case EP2PSend.k_EP2PSendUnreliable:
-                    return 1200; //UDP like - MTU size.
-                case EP2PSend.k_EP2PSendUnreliableNoDelay:
-                    return 1200; //UDP like - MTU size.
-                case EP2PSend.k_EP2PSendReliable:
-                    return 1048576; //Reliable message send. Can send up to 1MB of data in a single message.
-                case EP2PSend.k_EP2PSendReliableWithBuffering:
-                    return 1048576; //Reliable message send. Can send up to 1MB of data in a single message.
-                default:
-                    return 1200; //UDP like - MTU size.
-            }
-        }
-
-        public override bool Available()
-        {
             try
             {
-                return SteamManager.Initialized;
+                hostSteamID = new CSteamID(Convert.ToUInt64(host));
+
+                InternalReceiveLoop();
+
+                connectedComplete = new TaskCompletionSource<Task>();
+
+                OnConnected += SetConnectedComplete;
+                CloseP2PSessionWithUser(hostSteamID);
+
+                //Send a connect message to the steam client - this requests a connection with them
+                SendInternal(hostSteamID, connectMsgBuffer);
+
+                Task connectedCompleteTask = connectedComplete.Task;
+
+                if (await Task.WhenAny(connectedCompleteTask, Task.Delay(ConnectionTimeout, cancelToken.Token)) != connectedCompleteTask)
+                {
+                    //Timed out waiting for connection to complete
+                    OnConnected -= SetConnectedComplete;
+
+                    Exception e = new Exception("Timed out while connecting");
+                    OnReceivedError?.Invoke(e);
+                    throw e;
+                }
+
+                OnConnected -= SetConnectedComplete;
+
+                await ReceiveLoop();
             }
-            catch
+            catch (FormatException)
             {
+                Debug.LogError("Failed to connect ERROR passing steam ID address");
+                OnReceivedError?.Invoke(new Exception("ERROR passing steam ID address"));
+                return;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("Failed to connect " + ex);
+                OnReceivedError?.Invoke(ex);
+            }
+            finally
+            {
+                Disconnect();
+            }
+
+        }
+
+        public async void Disconnect()
+        {
+            if (Connected)
+            {
+                SendInternal(hostSteamID, disconnectMsgBuffer);
+                Connected = false;
+                OnDisconnected?.Invoke();
+                Dispose();
+                cancelToken.Cancel();
+
+                //Wait a short time before calling steams disconnect function so the message has time to go out
+                await Task.Delay(100);
+                CloseP2PSessionWithUser(hostSteamID);
+            }
+            else
+            {
+                Debug.Log("Tried to disconnect but node is not active.");
+            }
+
+        }
+
+        private void SetConnectedComplete()
+        {
+            connectedComplete.SetResult(connectedComplete.Task);
+        }
+
+        private async Task ReceiveLoop()
+        {
+            Debug.Log("ReceiveLoop Start");
+
+            uint readPacketSize;
+            CSteamID clientSteamID;
+
+            try
+            {
+                byte[] receiveBuffer;
+
+                while (Connected)
+                {
+                    for (int i = 0; i < channels.Length; i++)
+                    {
+                        while (Receive(out readPacketSize, out clientSteamID, out receiveBuffer, i))
+                        {
+                            if (readPacketSize == 0)
+                            {
+                                continue;
+                            }
+                            if (clientSteamID != hostSteamID)
+                            {
+                                Debug.LogError("Received a message from an unknown");
+                                continue;
+                            }
+                            // we received some data,  raise event
+                            OnReceivedData?.Invoke(receiveBuffer, i);
+                        }
+                    }
+                    //not got a message - wait a bit more
+                    await Task.Delay(updateInterval);
+                }
+            }
+            catch (ObjectDisposedException) { }
+
+            Debug.Log("ReceiveLoop Stop");
+        }
+
+        protected override void OnNewConnectionInternal(P2PSessionRequest_t result)
+        {
+            Debug.Log("OnNewConnectionInternal in client");
+
+            if (hostSteamID == result.m_steamIDRemote)
+            {
+                SteamNetworking.AcceptP2PSessionWithUser(result.m_steamIDRemote);
+            }
+            else
+            {
+                Debug.LogError("");
+            }
+        }
+
+        //start a async loop checking for internal messages and processing them. This includes internal connect negotiation and disconnect requests so runs outside "connected"
+        private async void InternalReceiveLoop()
+        {
+            Debug.Log("InternalReceiveLoop Start");
+
+            uint readPacketSize;
+            CSteamID clientSteamID;
+
+            try
+            {
+                while (Connected)
+                {
+                    while (ReceiveInternal(out readPacketSize, out clientSteamID))
+                    {
+                        if (readPacketSize != 1)
+                        {
+                            continue;
+                        }
+                        if (clientSteamID != hostSteamID)
+                        {
+                            Debug.LogError("Received an internal message from an unknown");
+                            continue;
+                        }
+                        switch (receiveBufferInternal[0])
+                        {
+                            case (byte)InternalMessages.ACCEPT_CONNECT:
+                                Connected = true;
+                                OnConnected?.Invoke();
+                                break;
+                            case (byte)InternalMessages.DISCONNECT:
+                                if (Connected)
+                                {
+                                    Connected = false;
+                                    OnDisconnected?.Invoke();
+                                }
+                                break;
+                        }
+                    }
+                    //not got a message - wait a bit more
+                    await Task.Delay(updateInterval);
+                }
+            }
+            catch (ObjectDisposedException) { }
+
+            Debug.Log("InternalReceiveLoop Stop");
+        }
+
+        // send the data or throw exception
+        public bool Send(byte[] data, int channelId)
+        {
+            if (Connected)
+            {
+                Send(hostSteamID, data, channelToSendType(channelId), channelId);
+                return true;
+            }
+            else
+            {
+                Debug.Log("Could not send - not connected.");
                 return false;
             }
         }
+
     }
 }

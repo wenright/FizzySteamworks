@@ -10,14 +10,18 @@ namespace Mirror.FizzySteam
     {
         protected FizzySteam.Client client = new FizzySteam.Client();
         protected FizzySteam.Server server = new FizzySteam.Server();
-        public float messageUpdateRate = 0.03333f;
         public EP2PSend[] channels = new EP2PSend[2] { EP2PSend.k_EP2PSendReliable, EP2PSend.k_EP2PSendUnreliable };
+
         public int MaxConnections = 16;
+        [Tooltip("Timeout for connecting in seconds.")]
         public int Timeout = 25;
+        [Tooltip("Message update rate in milliseconds.")]
+        public int messageUpdateRate = 35;
 
         private void Start()
         {
-            Common.secondsBetweenPolls = messageUpdateRate;
+            Common.SetMessageUpdateRate(messageUpdateRate);
+
             if (channels == null)
             {
                 channels = new EP2PSend[2] { EP2PSend.k_EP2PSendReliable, EP2PSend.k_EP2PSendUnreliable };
