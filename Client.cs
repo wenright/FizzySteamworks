@@ -1,75 +1,31 @@
-﻿using UnityEngine;
+﻿using Steamworks;
 using System;
-using Steamworks;
+using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Mirror.FizzySteam
 {
     public class Client : Common
     {
-        enum ConnectionState : byte {
-            DISCONNECTED,
-            CONNECTING,
-            CONNECTED
-        }
-
         public event Action<Exception> OnReceivedError;
         public event Action<byte[], int> OnReceivedData;
         public event Action OnConnected;
         public event Action OnDisconnected;
 
-        //how long to wait before connect timeout
         public static int clientConnectTimeoutMS = 25000;
 
-        private ConnectionState state = ConnectionState.DISCONNECTED;
         private CSteamID hostSteamID = CSteamID.Nil;
+        private TaskCompletionSource<Task> connectedComplete;
+        private CancellationTokenSource cancelToken;
 
-        public bool Connecting { get { return state == ConnectionState.CONNECTING; } private set { if( value ) state = ConnectionState.CONNECTING; } }
-        public bool Connected {
-            get { return state == ConnectionState.CONNECTED; }
-            private set {
-                if (value)
-                {
-                    bool wasConnecting = Connecting;
-                    state = ConnectionState.CONNECTED;
-                    if (wasConnecting)
-                    {
-                        OnConnected?.Invoke();
-                    }
+        public bool Active { get; private set; }
 
-                }
-            }
-        }
-        public bool Disconnected {
-            get { return state == ConnectionState.DISCONNECTED; }
-            private set {
-                if (value)
-                {
-                    bool wasntDisconnected = !Disconnected;
-                    state = ConnectionState.DISCONNECTED;
-                    if (wasntDisconnected)
-                    {
-                        OnDisconnected?.Invoke();
-                    }
-
-                    deinitialise();
-                }
-            }
-        }
-
-        //internally used while connecting. Subscribe to onconnect and signal this task
-        TaskCompletionSource<Task> connectedComplete;
-        private void setConnectedComplete()
-        {
-            connectedComplete.SetResult(connectedComplete.Task);
-        }
-
-        System.Threading.CancellationTokenSource cancelToken;
         public async void Connect(string host)
         {
-            cancelToken = new System.Threading.CancellationTokenSource();
+            cancelToken = new CancellationTokenSource();
             // not if already started
-            if (!Disconnected)
+            if (Active)
             {
                 // exceptions are better than silence
                 Debug.LogError("Client already connected or connecting");
@@ -77,9 +33,7 @@ namespace Mirror.FizzySteam
                 return;
             }
 
-            // We are connecting from now until Connect succeeds or fails
-            Connecting = true;
-
+            Active = true;
             initialise();
 
             try
@@ -89,8 +43,8 @@ namespace Mirror.FizzySteam
                 InternalReceiveLoop();
 
                 connectedComplete = new TaskCompletionSource<Task>();
-                
-                OnConnected += setConnectedComplete;
+
+                OnConnected += SetConnectedComplete;
                 CloseP2PSessionWithUser(hostSteamID);
 
                 //Send a connect message to the steam client - this requests a connection with them
@@ -101,14 +55,14 @@ namespace Mirror.FizzySteam
                 if (await Task.WhenAny(connectedCompleteTask, Task.Delay(clientConnectTimeoutMS, cancelToken.Token)) != connectedCompleteTask)
                 {
                     //Timed out waiting for connection to complete
-                    OnConnected -= setConnectedComplete;
+                    OnConnected -= SetConnectedComplete;
 
                     Exception e = new Exception("Timed out while connecting");
                     OnReceivedError?.Invoke(e);
                     throw e;
                 }
 
-                OnConnected -= setConnectedComplete;
+                OnConnected -= SetConnectedComplete;
 
                 await ReceiveLoop();
             }
@@ -132,16 +86,28 @@ namespace Mirror.FizzySteam
 
         public async void Disconnect()
         {
-            if (!Disconnected)
+            if (Active)
             {
                 SendInternal(hostSteamID, disconnectMsgBuffer);
-                Disconnected = true;
+                Active = false;
+                OnDisconnected?.Invoke();
+                deinitialise();
                 cancelToken.Cancel();
 
                 //Wait a short time before calling steams disconnect function so the message has time to go out
                 await Task.Delay(100);
                 CloseP2PSessionWithUser(hostSteamID);
             }
+            else
+            {
+                Debug.Log("Tried to disconnect but node is not active.");
+            }
+
+        }
+
+        private void SetConnectedComplete()
+        {
+            connectedComplete.SetResult(connectedComplete.Task);
         }
 
         private async Task ReceiveLoop()
@@ -155,14 +121,18 @@ namespace Mirror.FizzySteam
             {
                 byte[] receiveBuffer;
 
-                while (Connected)
+                while (Active)
                 {
-                    for (int i = 0; i < channels.Length; i++) {
-                        while (Receive(out readPacketSize, out clientSteamID, out receiveBuffer, i)) {
-                            if (readPacketSize == 0) {
+                    for (int i = 0; i < channels.Length; i++)
+                    {
+                        while (Receive(out readPacketSize, out clientSteamID, out receiveBuffer, i))
+                        {
+                            if (readPacketSize == 0)
+                            {
                                 continue;
                             }
-                            if (clientSteamID != hostSteamID) {
+                            if (clientSteamID != hostSteamID)
+                            {
                                 Debug.LogError("Received a message from an unknown");
                                 continue;
                             }
@@ -186,7 +156,8 @@ namespace Mirror.FizzySteam
             if (hostSteamID == result.m_steamIDRemote)
             {
                 SteamNetworking.AcceptP2PSessionWithUser(result.m_steamIDRemote);
-            } else
+            }
+            else
             {
                 Debug.LogError("");
             }
@@ -202,7 +173,7 @@ namespace Mirror.FizzySteam
 
             try
             {
-                while (!Disconnected)
+                while (Active)
                 {
                     while (ReceiveInternal(out readPacketSize, out clientSteamID))
                     {
@@ -218,10 +189,14 @@ namespace Mirror.FizzySteam
                         switch (receiveBufferInternal[0])
                         {
                             case (byte)InternalMessages.ACCEPT_CONNECT:
-                                Connected = true;
+                                OnConnected?.Invoke();
                                 break;
                             case (byte)InternalMessages.DISCONNECT:
-                                Disconnected = true;
+                                if (Active)
+                                {
+                                    Active = false;
+                                    OnDisconnected?.Invoke();
+                                }
                                 break;
                         }
                     }
@@ -237,7 +212,7 @@ namespace Mirror.FizzySteam
         // send the data or throw exception
         public bool Send(byte[] data, int channelId)
         {
-            if (Connected)
+            if (Active)
             {
                 Send(hostSteamID, data, channelToSendType(channelId), channelId);
                 return true;
