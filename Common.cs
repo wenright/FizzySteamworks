@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System;
+using Steamworks;
 
 namespace Mirror.FizzySteam
 {

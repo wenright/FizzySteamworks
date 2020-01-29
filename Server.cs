@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using System.Threading.Tasks;
+using Steamworks;
 
 namespace Mirror.FizzySteam
 {

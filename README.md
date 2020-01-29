@@ -14,7 +14,7 @@ Both of these projects need to be installed and working before you can use this 
 ## Setting Up
 
 1. Install Mirror (Requires Mirror 8.0+) from the Unity asset store or grab a unitypackage here: **[Download Mirror](https://github.com/vis2k/Mirror/releases)**
-3. Install the unitypackage from the release section: **[Download FizzySteamMirror] (https://github.com/Chykary/FizzySteamyMirror/releases)**
+3. Install the unitypackage from the release section
 2. Create a empty object in your scene and attach the **"Steam Manager"** script to it.
 3. In your **"NetworkManager"** object replace **"Telepathy"** script with **"FizzySteamyMirror"** script.
 
