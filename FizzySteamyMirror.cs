@@ -12,7 +12,6 @@ namespace Mirror.FizzySteam
         protected FizzySteam.Server server = new FizzySteam.Server();
         public EP2PSend[] channels = new EP2PSend[2] { EP2PSend.k_EP2PSendReliable, EP2PSend.k_EP2PSendUnreliable };
 
-        public int MaxConnections = 16;
         [Tooltip("Timeout for connecting in seconds.")]
         public int Timeout = 25;
         [Tooltip("Message update rate in milliseconds.")]
@@ -52,7 +51,7 @@ namespace Mirror.FizzySteam
 
         // server
         public override bool ServerActive() => server.Active;
-        public override void ServerStart() => server.Listen(MaxConnections);
+        public override void ServerStart() => server.Listen(NetworkManager.singleton.maxConnections);
 
 
         public override Uri ServerUri() => throw new NotSupportedException();

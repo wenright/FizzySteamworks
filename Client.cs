@@ -32,7 +32,7 @@ namespace Mirror.FizzySteam
                 return;
             }
 
-            initialise();
+            Initialise();
 
             try
             {

@@ -30,7 +30,7 @@ namespace Mirror.FizzySteam
         readonly static protected uint maxPacketSize = 1048576;
         readonly protected byte[] receiveBufferInternal = new byte[1];
 
-        public static void SetMessageUpdateRate(int milliseconds) => updateInterval = TimeSpan.FromMilliseconds(milliseconds);
+        public static void SetMessageUpdateRate(int milliseconds) => updateInterval = TimeSpan.FromMilliseconds(Mathf.Min(1, milliseconds));
 
         protected void Dispose()
         {
@@ -48,19 +48,9 @@ namespace Mirror.FizzySteam
 
         }
 
-        protected virtual void initialise()
+        protected virtual void Initialise()
         {
             Debug.Log("initialise");
-            /*
-            nextConnectionID = 1;
-
-            steamConnectionMap = new SteamConnectionMap();
-
-            steamNewConnections = new Queue<int>();
-
-            serverReceiveBufferPendingConnectionID = -1;
-            serverReceiveBufferPending = null;
-            */
 
             if (SteamManager.Initialized)
             {

@@ -83,7 +83,7 @@ namespace Mirror.FizzySteam
             steamConnectionMap = new SteamConnectionMap();
             nextConnectionID = 0;
 
-            initialise();
+            Initialise();
             Active = true;
             this.maxConnections = maxConnections;
 
