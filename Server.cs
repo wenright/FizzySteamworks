@@ -22,24 +22,16 @@ namespace Mirror.FizzySteam
 
     internal class SteamConnectionMap : IEnumerable<KeyValuePair<int, SteamClient>>
     {
-        public readonly Dictionary<CSteamID, SteamClient> fromSteamID = new Dictionary<CSteamID, SteamClient>();
-        public readonly Dictionary<int, SteamClient> fromConnectionID = new Dictionary<int, SteamClient>();
+        private readonly Dictionary<CSteamID, SteamClient> fromSteamID = new Dictionary<CSteamID, SteamClient>();
+        private readonly Dictionary<int, SteamClient> fromConnectionID = new Dictionary<int, SteamClient>();
 
-        public SteamConnectionMap()
-        {
-        }
-
-        public int Count
-        {
-            get { return fromSteamID.Count; }
-        }
+        public int Count => fromSteamID.Count;
 
         public SteamClient Add(CSteamID steamID, int connectionID)
         {
             var newClient = new SteamClient(steamID, connectionID);
             fromSteamID.Add(steamID, newClient);
             fromConnectionID.Add(connectionID, newClient);
-
             return newClient;
         }
 
@@ -49,58 +41,50 @@ namespace Mirror.FizzySteam
             fromConnectionID.Remove(steamClient.connectionID);
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        public bool Contains(int connectionId) => fromConnectionID.ContainsKey(connectionId);
+
+        public SteamClient this[CSteamID key]
         {
-            return GetEnumerator();
+            get => fromSteamID[key];
         }
 
-        public IEnumerator<KeyValuePair<int, SteamClient>> GetEnumerator()
+        public SteamClient this[int key]
         {
-            return fromConnectionID.GetEnumerator();
+            get => fromConnectionID[key];
         }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public IEnumerator<KeyValuePair<int, SteamClient>> GetEnumerator() => fromConnectionID.GetEnumerator();
     }
 
     public class Server : Common
     {
-
-        enum ConnectionState : byte
-        {
-            OFFLINE,
-            LISTENING
-        }
+        public bool Active { get; private set; }
 
         public event Action<int> OnConnected;
         public event Action<int, byte[], int> OnReceivedData;
         public event Action<int> OnDisconnected;
         public event Action<int, Exception> OnReceivedError;
 
-        private ConnectionState state = ConnectionState.OFFLINE;
         private SteamConnectionMap steamConnectionMap;
-        private int nextConnectionID;
         private int maxConnections;
-
-        public bool Listening { get { return state == ConnectionState.LISTENING; } private set { if (value) state = ConnectionState.LISTENING; } }
-        public bool Offline
-        {
-            get { return state == ConnectionState.OFFLINE; }
-            private set
-            {
-                if (value)
-                {
-                    state = ConnectionState.OFFLINE;
-
-                    deinitialise();
-                }
-            }
-        }
+        private int nextConnectionID;
 
         public async void Listen(int maxConnections = int.MaxValue)
         {
+            if (Active)
+            {
+                Debug.Log("Server already listening.");
+                return;
+            }
+
             Debug.Log("Listen Start");
-            //todo check we are not already listening ?
+            steamConnectionMap = new SteamConnectionMap();
+            nextConnectionID = 0;
 
             initialise();
-            Listening = true;
+            Active = true;
             this.maxConnections = maxConnections;
 
             InternalReceiveLoop();
@@ -113,7 +97,6 @@ namespace Mirror.FizzySteam
         protected override void OnNewConnectionInternal(P2PSessionRequest_t result)
         {
             Debug.Log("OnNewConnectionInternal in server");
-
             SteamNetworking.AcceptP2PSessionWithUser(result.m_steamIDRemote);
         }
 
@@ -128,9 +111,8 @@ namespace Mirror.FizzySteam
 
             try
             {
-                while (!Offline)
+                while (Active)
                 {
-
                     while (ReceiveInternal(out readPacketSize, out clientSteamID))
                     {
                         Debug.Log("InternalReceiveLoop - data");
@@ -160,7 +142,7 @@ namespace Mirror.FizzySteam
                             case (byte)InternalMessages.DISCONNECT:
                                 try
                                 {
-                                    SteamClient steamClient = steamConnectionMap.fromSteamID[clientSteamID];
+                                    SteamClient steamClient = steamConnectionMap[clientSteamID];
                                     steamConnectionMap.Remove(steamClient);
                                     OnDisconnected?.Invoke(steamClient.connectionID);
                                     CloseP2PSessionWithUser(steamClient.steamID);
@@ -195,7 +177,7 @@ namespace Mirror.FizzySteam
             try
             {
                 byte[] receiveBuffer;
-                while (!Offline)
+                while (Active)
                 {
                     for (int i = 0; i < channels.Length; i++)
                     {
@@ -208,7 +190,7 @@ namespace Mirror.FizzySteam
 
                             try
                             {
-                                int connectionId = steamConnectionMap.fromSteamID[clientSteamID].connectionID;
+                                int connectionId = steamConnectionMap[clientSteamID].connectionID;
                                 // we received some data,  raise event
                                 OnReceivedData?.Invoke(connectionId, receiveBuffer, i);
                             }
@@ -230,39 +212,35 @@ namespace Mirror.FizzySteam
             Debug.Log("ReceiveLoop Stop");
         }
 
-        // check if the server is running
-        public bool Active
-        {
-            get { return Listening; }
-        }
-
         public void Stop()
         {
             Debug.LogWarning("Server Stop");
-            // only if started
-            if (!Active) return;
 
-            Offline = true;
+            if (!Active)
+            {
+                Debug.Log("Trying to stop but server is not active.");
+                return;
+            }
 
+            Active = false;
             deinitialise();
             Debug.Log("Server Stop Finished");
         }
 
-        // disconnect (kick) a client
         public bool Disconnect(int connectionId)
         {
-            try
+            if (steamConnectionMap.Contains(connectionId))
             {
-                SteamClient steamClient = steamConnectionMap.fromConnectionID[connectionId];
+                SteamClient steamClient = steamConnectionMap[connectionId];
                 Disconnect(steamClient);
                 return true;
             }
-            catch (KeyNotFoundException)
+            else
             {
                 //we have no idea who this connection is
-                Debug.LogWarning("Trying to disconnect a connection thats not known " + connectionId);
+                Debug.LogWarning("Trying to disconnect unknown connection id: " + connectionId);
+                return false;
             }
-            return false;
         }
 
         private async void Disconnect(SteamClient steamClient)
@@ -286,45 +264,35 @@ namespace Mirror.FizzySteam
         {
             for (int i = 0; i < connectionIds.Count; i++)
             {
-                try
+                if (steamConnectionMap.Contains(connectionIds[i]))
                 {
-                    SteamClient steamClient = steamConnectionMap.fromConnectionID[connectionIds[i]];
+                    SteamClient steamClient = steamConnectionMap[connectionIds[i]];
                     //will default to reliable at channel 0 if sent on an unknown channel
                     Send(steamClient.steamID, data, channelToSendType(channelId), channelId >= channels.Length ? 0 : channelId);
                 }
-                catch (KeyNotFoundException)
+                else
                 {
-                    //we have no idea who this connection is
-                    Debug.LogError("Tryign to Send on a connection thats not known " + connectionIds[i]);
+                    Debug.LogError("Trying to send on unknown connection: " + connectionIds[i]);
                     OnReceivedError?.Invoke(connectionIds[i], new Exception("ERROR Unknown Connection"));
                 }
             }
+
             return true;
         }
 
         public string ServerGetClientAddress(int connectionId)
         {
-            try
+            if (steamConnectionMap.Contains(connectionId))
             {
-                SteamClient steamClient = steamConnectionMap.fromConnectionID[connectionId];
+                SteamClient steamClient = steamConnectionMap[connectionId];
                 return steamClient.steamID.ToString();
             }
-            catch (KeyNotFoundException)
+            else
             {
-                //we have no idea who this connection is
-                Debug.LogError("Trying to get info on an unknown connection " + connectionId);
+                Debug.LogError("Trying to get info on unknown connection: " + connectionId);
                 OnReceivedError?.Invoke(connectionId, new Exception("ERROR Unknown Connection"));
+                return string.Empty;
             }
-
-            return null;
-        }
-
-        protected override void initialise()
-        {
-            base.initialise();
-
-            nextConnectionID = 1;
-            steamConnectionMap = new SteamConnectionMap();
         }
     }
 }
