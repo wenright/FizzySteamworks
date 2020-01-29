@@ -6,7 +6,6 @@ namespace Mirror.FizzySteam
 {
     public class Common
     {
-
         protected enum SteamChannels : int
         {
             SEND_DATA,
@@ -124,7 +123,8 @@ namespace Mirror.FizzySteam
             {
                 throw new ObjectDisposedException("Steamworks");
             }
-            if (channel >= channels.Length) {
+            if (channel >= channels.Length)
+            {
                 channel = 0;
             }
             SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, sendType, channel);
@@ -180,7 +180,8 @@ namespace Mirror.FizzySteam
 
         protected EP2PSend channelToSendType(int channelId)
         {
-            if (channelId >= channels.Length) {
+            if (channelId >= channels.Length)
+            {
                 Debug.LogError("Unknown channel id, please set it up in the component, will now send reliably");
                 return EP2PSend.k_EP2PSendReliable;
             }
