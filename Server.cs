@@ -71,7 +71,7 @@ namespace Mirror.FizzySteam
         private int maxConnections;
         private int nextConnectionID;
 
-        public async void Listen(int maxConnections = int.MaxValue)
+        public async void Listen(int maxConnections)
         {
             if (Active)
             {
