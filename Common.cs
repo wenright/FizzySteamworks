@@ -9,7 +9,7 @@ namespace Mirror.FizzySteam
 {
     public abstract class Common
     {
-        public bool Active { get; protected set; }
+        public bool Error { get; protected set; }
         private EP2PSend[] channels;
         private const int SEND_INTERNAL = 100;
 
@@ -45,8 +45,10 @@ namespace Mirror.FizzySteam
             cts = new CancellationTokenSource();
         }
 
-        protected void Dispose()
+        public void Shutdown()
         {
+            cts.Cancel();
+
             if (callback_OnNewConnection == null)
             {
                 callback_OnNewConnection.Dispose();
@@ -57,52 +59,30 @@ namespace Mirror.FizzySteam
             {
                 callback_OnConnectFail.Dispose();
                 callback_OnConnectFail = null;
-            }
+            }            
         }
 
-        protected void OnNewConnection(P2PSessionRequest_t result)
-        {
-            Debug.Log("OnNewConnection");
-            OnNewConnectionInternal(result);
-        }
-
-        protected virtual void OnNewConnectionInternal(P2PSessionRequest_t result) { Debug.Log("OnNewConnectionInternal"); }
+        protected abstract void OnNewConnection(P2PSessionRequest_t result);
 
         protected virtual void OnConnectFail(P2PSessionConnectFail_t result)
         {
             Debug.Log("OnConnectFail " + result);
-            throw new Exception("Failed to connect");
+            Error = true;
+            throw new Exception("Failed to connect");            
         }
 
-        protected void SendInternal(CSteamID host, byte[] msgBuffer)
-        {
-            if (!SteamManager.Initialized)
-            {
-                throw new ObjectDisposedException("Steamworks");
-            }
-            SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, EP2PSend.k_EP2PSendReliable, SEND_INTERNAL);
-        }
+        protected void SendInternal(CSteamID host, byte[] msgBuffer) => SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, EP2PSend.k_EP2PSendReliable, SEND_INTERNAL);
 
         private bool ReceiveInternal(out uint readPacketSize, out CSteamID clientSteamID) => SteamNetworking.ReadP2PPacket(receiveBufferInternal, 1, out readPacketSize, out clientSteamID, SEND_INTERNAL);        
 
         protected void Send(CSteamID host, byte[] msgBuffer, int channel)
         {
             Debug.Assert(channel <= channels.Length, $"Channel {channel} not configured for FizzySteamMirror.");
-            if (!SteamManager.Initialized)
-            {
-                throw new ObjectDisposedException("Steamworks");
-            }
-
             SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, channels[channel], channel);
         }
 
         protected bool Receive(out uint readPacketSize, out CSteamID clientSteamID, out byte[] receiveBuffer, int channel)
         {
-            if (!SteamManager.Initialized)
-            {
-                throw new ObjectDisposedException("Steamworks");
-            }
-
             uint packetSize;
             if (SteamNetworking.IsP2PPacketAvailable(out packetSize, channel) && packetSize > 0)
             {
@@ -116,14 +96,7 @@ namespace Mirror.FizzySteam
             return false;
         }
 
-        protected void CloseP2PSessionWithUser(CSteamID clientSteamID)
-        {
-            if (!SteamManager.Initialized)
-            {
-                throw new ObjectDisposedException("Steamworks");
-            }
-            SteamNetworking.CloseP2PSessionWithUser(clientSteamID);
-        }
+        protected void CloseP2PSessionWithUser(CSteamID clientSteamID) => SteamNetworking.CloseP2PSessionWithUser(clientSteamID);       
 
         protected void StartInternalLoop()
         {
@@ -163,6 +136,7 @@ namespace Mirror.FizzySteam
             catch (Exception e)
             {
                 Debug.LogException(e);
+                Error = true;
             }
         }
 
@@ -195,6 +169,7 @@ namespace Mirror.FizzySteam
             catch (Exception e)
             {
                 Debug.LogException(e);
+                Error = true;
             }
         }
 

@@ -24,7 +24,7 @@ namespace Mirror.FizzySteam
         }
 
         // client
-        public override bool ClientConnected() => client != null && client.Active;
+        public override bool ClientConnected() => client != null && client.Connected;
         public override void ClientConnect(string address)
         {
             if (!SteamManager.Initialized)
@@ -47,13 +47,20 @@ namespace Mirror.FizzySteam
 
 
         // server
-        public override bool ServerActive() => server != null && server.Active;
+        public override bool ServerActive() => server != null && !server.Error;
         public override void ServerStart()
         {
             if (!SteamManager.Initialized)
             {
                 Debug.LogError("SteamWorks not initialized. Server could not be started.");
                 return;
+            }
+
+            if(server != null && server.Error)
+            {
+                Debug.Log("Cleaning up old server node with errors.");
+                server.Shutdown();
+                server = null;
             }
 
             if (server == null)
@@ -72,12 +79,27 @@ namespace Mirror.FizzySteam
         public override bool ServerSend(List<int> connectionIds, int channelId, ArraySegment<byte> segment) => ServerActive()  && server.SendAll(connectionIds, segment.Array, channelId);
         public override bool ServerDisconnect(int connectionId) => ServerActive() && server.Disconnect(connectionId);
         public override string ServerGetClientAddress(int connectionId) => ServerActive() ? server.ServerGetClientAddress(connectionId) : string.Empty;
-        public override void ServerStop() => server?.Stop();
+        public override void ServerStop()
+        {
+            if (server != null)
+            {
+                Debug.Log("Shutting down server.");
+                server.Shutdown();
+                server = null;
+            }
+            else
+            {
+                Debug.Log("No server active, did not stop a server.");
+            }
+        }
 
         public override void Shutdown()
         {
-            client.Disconnect();
-            server.Stop();
+            server?.Shutdown();
+            client?.Disconnect();
+
+            server = null;
+            client = null;
         }
 
         public override int GetMaxPacketSize(int channelId)

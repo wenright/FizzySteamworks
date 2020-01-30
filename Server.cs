@@ -20,7 +20,16 @@ namespace Mirror.FizzySteam
         public static Server CreateServer(FizzySteamyMirror transport, int maxConnections)
         {
             Server s = new Server(transport, maxConnections);
-            s.Listen();
+            if (SteamManager.Initialized)
+            {
+                s.Listen();
+            }
+            else
+            {
+                s.Error = true;
+                Debug.LogError("SteamWorks not initialized");
+            }
+
             return s;
         }
 
@@ -35,8 +44,6 @@ namespace Mirror.FizzySteam
             OnDisconnected += (id) => transport.OnServerDisconnected?.Invoke(id);
             OnReceivedData += (id, data, channel) => transport.OnServerDataReceived?.Invoke(id, new ArraySegment<byte>(data), channel);
             OnReceivedError += (id, exception) => transport.OnServerError?.Invoke(id, exception);
-
-            Active = true;
         }
 
         private void Listen()
@@ -45,7 +52,7 @@ namespace Mirror.FizzySteam
             StartDataLoops();
         }
 
-        protected override void OnNewConnectionInternal(P2PSessionRequest_t result) => SteamNetworking.AcceptP2PSessionWithUser(result.m_steamIDRemote);
+        protected override void OnNewConnection(P2PSessionRequest_t result) => SteamNetworking.AcceptP2PSessionWithUser(result.m_steamIDRemote);
 
         protected override void OnReceiveInternalData(InternalMessages type, CSteamID clientSteamID)
         {
@@ -96,21 +103,6 @@ namespace Mirror.FizzySteam
                 Debug.LogError("Data received from steam client thats not known " + clientSteamID);
                 OnReceivedError?.Invoke(-1, new Exception("ERROR Unknown SteamID"));
             }
-        }
-
-        public void Stop()
-        {
-            Debug.LogWarning("Server Stop");
-
-            if (!Active)
-            {
-                Debug.Log("Trying to stop but server is not active.");
-                return;
-            }
-
-            Active = false;
-            Dispose();
-            Debug.Log("Server Stop Finished");
         }
 
         public bool Disconnect(int connectionId)
