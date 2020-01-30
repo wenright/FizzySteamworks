@@ -11,7 +11,7 @@ namespace Mirror.FizzySteam
         private Client client;
         private Server server;
 
-        public EP2PSend[] Channels = new EP2PSend[2] { EP2PSend.k_EP2PSendReliable, EP2PSend.k_EP2PSendUnreliable };
+        public EP2PSend[] Channels = new EP2PSend[1] { EP2PSend.k_EP2PSendReliable };
 
         [Tooltip("Timeout for connecting in seconds.")]
         public int Timeout = 25;

@@ -46,105 +46,55 @@ namespace Mirror.FizzySteam
         }
 
         protected override void OnNewConnectionInternal(P2PSessionRequest_t result) => SteamNetworking.AcceptP2PSessionWithUser(result.m_steamIDRemote);
-        
 
-        private async void InternalReceiveLoop()
+        protected override void OnReceiveInternalData(InternalMessages type, CSteamID clientSteamID)
         {
-            uint readPacketSize;
-            CSteamID clientSteamID;
-
-            try
+            switch (type)
             {
-                while (Active)
-                {
-                    while (ReceiveInternal(out readPacketSize, out clientSteamID))
+                case InternalMessages.CONNECT:
+                    if (steamToMirrorIds.Count >= maxConnections)
                     {
-                        Debug.Log("InternalReceiveLoop - data");
-                        if (readPacketSize != 1)
-                        {
-                            continue;
-                        }
-                        Debug.Log("InternalReceiveLoop - received " + receiveBufferInternal[0]);
-                        switch (receiveBufferInternal[0])
-                        {
-                            case (byte)InternalMessages.CONNECT:
-                                if (steamToMirrorIds.Count >= maxConnections)
-                                {
-                                    SendInternal(clientSteamID, disconnectMsgBuffer);
-                                    continue;
-                                    //too many connections, reject
-                                }
-                                SendInternal(clientSteamID, acceptConnectMsgBuffer);
+                        SendInternal(clientSteamID, disconnectMsgBuffer);
+                        return;
+                    }
+                    SendInternal(clientSteamID, acceptConnectMsgBuffer);
 
-                                int connectionId = nextConnectionID++;
-                                steamToMirrorIds.Add(clientSteamID, connectionId);
-                                OnConnected?.Invoke(connectionId);
-                                break;
-                            case (byte)InternalMessages.DISCONNECT:
-                                if(steamToMirrorIds.Contains(clientSteamID))
-                                { 
-                                    steamToMirrorIds.Remove(clientSteamID);
-                                    OnDisconnected?.Invoke(steamToMirrorIds[clientSteamID]);
-                                    CloseP2PSessionWithUser(clientSteamID);
-                                }
-                                else
-                                {
-                                    Debug.LogError("Trying to disconnect a client thats not known SteamID " + clientSteamID);
-                                    OnReceivedError?.Invoke(-1, new Exception("ERROR Unknown SteamID"));
-                                }
-
-                                break;
-                        }
+                    int connectionId = nextConnectionID++;
+                    steamToMirrorIds.Add(clientSteamID, connectionId);
+                    OnConnected?.Invoke(connectionId);
+                    break;
+                case InternalMessages.DISCONNECT:
+                    if (steamToMirrorIds.Contains(clientSteamID))
+                    {
+                        steamToMirrorIds.Remove(clientSteamID);
+                        OnDisconnected?.Invoke(steamToMirrorIds[clientSteamID]);
+                        CloseP2PSessionWithUser(clientSteamID);
+                    }
+                    else
+                    {
+                        Debug.LogError("Trying to disconnect a client thats not known SteamID " + clientSteamID);
+                        OnReceivedError?.Invoke(-1, new Exception("ERROR Unknown SteamID"));
                     }
 
-                    await Task.Delay(updateInterval);
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
+                    break;
+                default:
+                    Debug.Log("Received unknown message type");
+                    break;
             }
         }
 
-        private async Task ReceiveLoop()
+        protected override void OnReceiveData(byte[] data, CSteamID clientSteamID, int channel)
         {
-            uint readPacketSize;
-            CSteamID clientSteamID;
-
-            try
+            if (steamToMirrorIds.Contains(clientSteamID))
             {
-                byte[] receiveBuffer;
-                while (Active)
-                {
-                    for (int i = 0; i < Channels.Length; i++)
-                    {
-                        while (Receive(out readPacketSize, out clientSteamID, out receiveBuffer, i))
-                        {
-                            if (readPacketSize == 0)
-                            {
-                                continue;
-                            }
-
-                            if(steamToMirrorIds.Contains(clientSteamID))
-                            {
-                                int connectionId = steamToMirrorIds[clientSteamID];
-                                OnReceivedData?.Invoke(connectionId, receiveBuffer, i);
-                            }
-                            else
-                            {
-                                CloseP2PSessionWithUser(clientSteamID);
-                                Debug.LogError("Data received from steam client thats not known " + clientSteamID);
-                                OnReceivedError?.Invoke(-1, new Exception("ERROR Unknown SteamID"));
-                            }
-                        }
-                    }
-
-                    await Task.Delay(updateInterval);
-                }
+                int connectionId = steamToMirrorIds[clientSteamID];
+                OnReceivedData?.Invoke(connectionId, data, channel);
             }
-            catch (Exception e) 
+            else
             {
-                Debug.LogException(e);
+                CloseP2PSessionWithUser(clientSteamID);
+                Debug.LogError("Data received from steam client thats not known " + clientSteamID);
+                OnReceivedError?.Invoke(-1, new Exception("ERROR Unknown SteamID"));
             }
         }
 

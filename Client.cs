@@ -119,43 +119,15 @@ namespace Mirror.FizzySteam
             connectedComplete.SetResult(connectedComplete.Task);
         }
 
-        private async Task ReceiveLoop()
+        protected override void OnReceiveData(byte[] data, CSteamID clientSteamID, int channel)
         {
-            Debug.Log("ReceiveLoop Start");
-
-            uint readPacketSize;
-            CSteamID clientSteamID;
-
-            try
+            if (clientSteamID != hostSteamID)
             {
-                byte[] receiveBuffer;
-
-                while (Active)
-                {
-                    for (int i = 0; i < Channels.Length; i++)
-                    {
-                        while (Receive(out readPacketSize, out clientSteamID, out receiveBuffer, i))
-                        {
-                            if (readPacketSize == 0)
-                            {
-                                continue;
-                            }
-                            if (clientSteamID != hostSteamID)
-                            {
-                                Debug.LogError("Received a message from an unknown");
-                                continue;
-                            }
-                            // we received some data,  raise event
-                            OnReceivedData?.Invoke(receiveBuffer, i);
-                        }
-                    }
-                    //not got a message - wait a bit more
-                    await Task.Delay(updateInterval);
-                }
+                Debug.LogError("Received a message from an unknown");
+                return;
             }
-            catch (ObjectDisposedException) { }
-
-            Debug.Log("ReceiveLoop Stop");
+            
+            OnReceivedData?.Invoke(data, channel);
         }
 
         protected override void OnNewConnectionInternal(P2PSessionRequest_t result)
@@ -172,51 +144,27 @@ namespace Mirror.FizzySteam
             }
         }
 
-        private async void InternalReceiveLoop()
+        protected override void OnReceiveInternalData(InternalMessages type, CSteamID clientSteamID)
         {
-            Debug.Log("InternalReceiveLoop Start");
-
-            uint readPacketSize;
-            CSteamID clientSteamID;
-
-            try
+            switch (type)
             {
-                while (Active)
-                {
-                    while (ReceiveInternal(out readPacketSize, out clientSteamID))
+                case InternalMessages.ACCEPT_CONNECT:
+                    Active = true;
+                    OnConnected?.Invoke();
+                    break;
+                case InternalMessages.DISCONNECT:
+                    if (Active)
                     {
-                        if (readPacketSize != 1)
-                        {
-                            continue;
-                        }
-                        if (clientSteamID != hostSteamID)
-                        {
-                            Debug.LogError("Received an internal message from an unknown");
-                            continue;
-                        }
-                        switch (receiveBufferInternal[0])
-                        {
-                            case (byte)InternalMessages.ACCEPT_CONNECT:
-                                Active = true;
-                                OnConnected?.Invoke();
-                                break;
-                            case (byte)InternalMessages.DISCONNECT:
-                                if (Active)
-                                {
-                                    Active = false;
-                                    OnDisconnected?.Invoke();
-                                }
-                                break;
-                        }
+                        Active = false;
+                        OnDisconnected?.Invoke();
                     }
-                    //not got a message - wait a bit more
-                    await Task.Delay(updateInterval);
-                }
+                    break;
+                default:
+                    Debug.Log("Received unknown message type");
+                    break;
             }
-            catch (ObjectDisposedException) { }
-
-            Debug.Log("InternalReceiveLoop Stop");
         }
+        
 
         public bool Send(byte[] data, int channelId)
         {
