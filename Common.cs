@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Mirror.FizzySteam
 {
-  public abstract class Common
+    public abstract class Common
     {
         public bool Error { get; protected set; }
 
