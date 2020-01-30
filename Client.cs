@@ -17,7 +17,7 @@ namespace Mirror.FizzySteam
 
         private CSteamID hostSteamID = CSteamID.Nil;
         private TaskCompletionSource<Task> connectedComplete;
-        private CancellationTokenSource cancelToken;
+        CancellationTokenSource cancelToken;
 
         private Client(FizzySteamyMirror transport) : base(transport.Channels)
         {
@@ -26,6 +26,8 @@ namespace Mirror.FizzySteam
             OnReceivedData += (data, channel) => transport.OnClientDataReceived?.Invoke(new ArraySegment<byte>(data), channel);
             OnReceivedError += (exception) => transport.OnClientError?.Invoke(exception);
             ConnectionTimeout = TimeSpan.FromSeconds(Math.Min(1, transport.Timeout));
+
+            SetMessageUpdateRate(transport.messageUpdateRate);
         }
 
         public static Client CreateClient(FizzySteamyMirror transport, string host)
@@ -50,7 +52,7 @@ namespace Mirror.FizzySteam
             {
                 hostSteamID = new CSteamID(Convert.ToUInt64(host));
 
-                InternalReceiveLoop();
+                StartInternalLoop();
 
                 connectedComplete = new TaskCompletionSource<Task>();
 
@@ -73,8 +75,7 @@ namespace Mirror.FizzySteam
                 }
 
                 OnConnected -= SetConnectedComplete;
-
-                await ReceiveLoop();
+                StartDataLoops();
             }
             catch (FormatException)
             {
@@ -87,14 +88,9 @@ namespace Mirror.FizzySteam
                 Debug.LogError("Failed to connect " + ex);
                 OnReceivedError?.Invoke(ex);
             }
-            finally
-            {
-                Disconnect();
-            }
-
         }
 
-        public async void Disconnect()
+        public void Disconnect()
         {
             if (Active)
             {
@@ -104,8 +100,7 @@ namespace Mirror.FizzySteam
                 Dispose();
                 cancelToken.Cancel();
 
-                await Task.Delay(100);
-                CloseP2PSessionWithUser(hostSteamID);
+                Task.Delay(100).ContinueWith(t => CloseP2PSessionWithUser(hostSteamID));
             }
             else
             {
@@ -114,10 +109,8 @@ namespace Mirror.FizzySteam
 
         }
 
-        private void SetConnectedComplete()
-        {
-            connectedComplete.SetResult(connectedComplete.Task);
-        }
+        private void SetConnectedComplete() => connectedComplete.SetResult(connectedComplete.Task);
+        
 
         protected override void OnReceiveData(byte[] data, CSteamID clientSteamID, int channel)
         {
@@ -132,15 +125,13 @@ namespace Mirror.FizzySteam
 
         protected override void OnNewConnectionInternal(P2PSessionRequest_t result)
         {
-            Debug.Log("OnNewConnectionInternal in client");
-
             if (hostSteamID == result.m_steamIDRemote)
             {
                 SteamNetworking.AcceptP2PSessionWithUser(result.m_steamIDRemote);
             }
             else
             {
-                Debug.LogError("");
+                Debug.LogError("P2P Acceptance Request from unknown host ID.");
             }
         }
 

@@ -39,10 +39,10 @@ namespace Mirror.FizzySteam
             Active = true;
         }
 
-        private async void Listen()
+        private void Listen()
         {
-            InternalReceiveLoop();
-            await ReceiveLoop();
+            StartInternalLoop();
+            StartDataLoops();
         }
 
         protected override void OnNewConnectionInternal(P2PSessionRequest_t result) => SteamNetworking.AcceptP2PSessionWithUser(result.m_steamIDRemote);

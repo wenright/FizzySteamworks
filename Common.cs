@@ -2,14 +2,15 @@
 using System;
 using Steamworks;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace Mirror.FizzySteam
 {
     public abstract class Common
     {
         public bool Active { get; protected set; }
-        public EP2PSend[] Channels;
-
+        private EP2PSend[] channels;
         private const int SEND_INTERNAL = 100;
 
         protected enum InternalMessages : byte
@@ -19,7 +20,7 @@ namespace Mirror.FizzySteam
             DISCONNECT
         }
 
-        protected TimeSpan updateInterval { get; private set; } = TimeSpan.FromMilliseconds(35);
+        private TimeSpan updateInterval = TimeSpan.FromMilliseconds(35);
 
         private Callback<P2PSessionRequest_t> callback_OnNewConnection = null;
         private Callback<P2PSessionConnectFail_t> callback_OnConnectFail = null;
@@ -29,13 +30,19 @@ namespace Mirror.FizzySteam
         readonly protected byte[] disconnectMsgBuffer = new byte[] { (byte)InternalMessages.DISCONNECT };
         readonly protected byte[] receiveBufferInternal = new byte[1];
 
+        private List<Task> receiveLoops;
+        private CancellationTokenSource cts;
+
         protected void SetMessageUpdateRate(int milliseconds) => updateInterval = TimeSpan.FromMilliseconds(Mathf.Min(1, milliseconds));
 
         protected Common(EP2PSend[] channels)
         {
-            Channels = channels;
+            Debug.Assert(channels.Length < 100, "FizzySteamyMirror does not support more than 99 channels.");
+            this.channels = channels;
             callback_OnNewConnection = Callback<P2PSessionRequest_t>.Create(OnNewConnection);
             callback_OnConnectFail = Callback<P2PSessionConnectFail_t>.Create(OnConnectFail);
+            receiveLoops = new List<Task>();
+            cts = new CancellationTokenSource();
         }
 
         protected void Dispose()
@@ -51,7 +58,6 @@ namespace Mirror.FizzySteam
                 callback_OnConnectFail.Dispose();
                 callback_OnConnectFail = null;
             }
-
         }
 
         protected void OnNewConnection(P2PSessionRequest_t result)
@@ -81,13 +87,13 @@ namespace Mirror.FizzySteam
 
         protected void Send(CSteamID host, byte[] msgBuffer, int channel)
         {
-            Debug.Assert(channel <= Channels.Length, $"Channel {channel} not configured for FizzySteamMirror.");
+            Debug.Assert(channel <= channels.Length, $"Channel {channel} not configured for FizzySteamMirror.");
             if (!SteamManager.Initialized)
             {
                 throw new ObjectDisposedException("Steamworks");
             }
 
-            SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, Channels[channel], channel);
+            SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, channels[channel], channel);
         }
 
         protected bool Receive(out uint readPacketSize, out CSteamID clientSteamID, out byte[] receiveBuffer, int channel)
@@ -119,24 +125,36 @@ namespace Mirror.FizzySteam
             SteamNetworking.CloseP2PSessionWithUser(clientSteamID);
         }
 
-        protected async void InternalReceiveLoop()
+        protected void StartInternalLoop()
+        {
+            receiveLoops.Add(Task.Factory.StartNew(() => InternalReceiveLoop(cts.Token)));
+        }
+
+        protected void StartDataLoops()
+        {
+            for (int i = 0; i < channels.Length; i++)
+            {
+                receiveLoops.Add(Task.Factory.StartNew(() => ReceiveLoop(cts.Token, i)));
+            }
+        }
+
+        private async Task InternalReceiveLoop(CancellationToken t)
         {
             uint readPacketSize;
             CSteamID clientSteamID;
 
             try
             {
-                while (Active)
+                while (!t.IsCancellationRequested)
                 {
                     while (ReceiveInternal(out readPacketSize, out clientSteamID))
                     {
                         Debug.Log("InternalReceiveLoop - data");
-                        if (readPacketSize != 1)
-                        {
-                            continue;
-                        }
 
-                        OnReceiveInternalData((InternalMessages)receiveBufferInternal[0], clientSteamID);                       
+                        if (!t.IsCancellationRequested)
+                        {
+                            OnReceiveInternalData((InternalMessages)receiveBufferInternal[0], clientSteamID);
+                        }
                     }
 
                     await Task.Delay(updateInterval);
@@ -148,7 +166,7 @@ namespace Mirror.FizzySteam
             }
         }
 
-        protected async Task ReceiveLoop()
+        private async Task ReceiveLoop(CancellationToken t, int channelNum)
         {
             uint readPacketSize;
             CSteamID clientSteamID;
@@ -156,18 +174,18 @@ namespace Mirror.FizzySteam
             try
             {
                 byte[] receiveBuffer;
-                while (Active)
+                while (!t.IsCancellationRequested)
                 {
-                    for (int i = 0; i < Channels.Length; i++)
+                    while (Receive(out readPacketSize, out clientSteamID, out receiveBuffer, channelNum))
                     {
-                        while (Receive(out readPacketSize, out clientSteamID, out receiveBuffer, i))
+                        if (readPacketSize == 0)
                         {
-                            if (readPacketSize == 0)
-                            {
-                                continue;
-                            }
+                            continue;
+                        }
 
-                            OnReceiveData(receiveBuffer, clientSteamID, i);
+                        if (!t.IsCancellationRequested)
+                        {
+                            OnReceiveData(receiveBuffer, clientSteamID, channelNum);
                         }
                     }
 
@@ -182,7 +200,5 @@ namespace Mirror.FizzySteam
 
         protected abstract void OnReceiveInternalData(InternalMessages type, CSteamID clientSteamID);
         protected abstract void OnReceiveData(byte[] data, CSteamID clientSteamID, int channel);
-
-
     }
 }
