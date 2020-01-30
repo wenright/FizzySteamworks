@@ -27,8 +27,6 @@ namespace Mirror.FizzySteam
             OnReceivedData += (data, channel) => transport.OnClientDataReceived?.Invoke(new ArraySegment<byte>(data), channel);
             OnReceivedError += (exception) => transport.OnClientError?.Invoke(exception);
             ConnectionTimeout = TimeSpan.FromSeconds(Math.Min(1, transport.Timeout));
-
-            SetMessageUpdateRate(transport.messageUpdateRate);
         }
 
         public static Client CreateClient(FizzySteamyMirror transport, string host)

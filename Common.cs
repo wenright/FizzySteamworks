@@ -4,23 +4,26 @@ using Steamworks;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Threading;
+using System.Linq;
 
 namespace Mirror.FizzySteam
 {
     public abstract class Common
     {
         public bool Error { get; protected set; }
+
         private EP2PSend[] channels;
+        private TimeSpan[] updateIntervals;
+
         private const int SEND_INTERNAL = 100;
+        private const uint SEND_INTERNAL_INTERVAL = 200;
 
         protected enum InternalMessages : byte
         {
             CONNECT,
             ACCEPT_CONNECT,
             DISCONNECT
-        }
-
-        private TimeSpan updateInterval = TimeSpan.FromMilliseconds(35);
+        }       
 
         private Callback<P2PSessionRequest_t> callback_OnNewConnection = null;
         private Callback<P2PSessionConnectFail_t> callback_OnConnectFail = null;
@@ -33,12 +36,12 @@ namespace Mirror.FizzySteam
         private List<Task> receiveLoops;
         private CancellationTokenSource cts;
 
-        protected void SetMessageUpdateRate(int milliseconds) => updateInterval = TimeSpan.FromMilliseconds(Mathf.Min(1, milliseconds));
-
-        protected Common(EP2PSend[] channels)
+        protected Common(SteamChannel[] channels)
         {
             Debug.Assert(channels.Length < 100, "FizzySteamyMirror does not support more than 99 channels.");
-            this.channels = channels;
+            this.channels = channels.Select(x => x.Type).ToArray();
+            updateIntervals = channels.Select(x => TimeSpan.FromMilliseconds(Mathf.Min(1, x.UpdateInterval))).ToArray();
+
             callback_OnNewConnection = Callback<P2PSessionRequest_t>.Create(OnNewConnection);
             callback_OnConnectFail = Callback<P2PSessionConnectFail_t>.Create(OnConnectFail);
             receiveLoops = new List<Task>();
@@ -115,6 +118,7 @@ namespace Mirror.FizzySteam
         {
             uint readPacketSize;
             CSteamID clientSteamID;
+            TimeSpan updateInterval = TimeSpan.FromMilliseconds(SEND_INTERNAL_INTERVAL);
 
             try
             {
@@ -163,7 +167,7 @@ namespace Mirror.FizzySteam
                         }
                     }
 
-                    await Task.Delay(updateInterval);
+                    await Task.Delay(updateIntervals[channelNum]);
                 }
             }
             catch (Exception e)

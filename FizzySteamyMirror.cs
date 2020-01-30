@@ -13,18 +13,17 @@ namespace Mirror.FizzySteam
         private Client client;
         private Server server;
 
-        public EP2PSend[] Channels = new EP2PSend[1] { EP2PSend.k_EP2PSendReliable };
+        [SerializeField]
+        public SteamChannel[] Channels = new SteamChannel[1] { new SteamChannel() { Type = EP2PSend.k_EP2PSendReliable, UpdateInterval = 35 } };
 
         [Tooltip("Timeout for connecting in seconds.")]
         public int Timeout = 25;
-        [Tooltip("Message update rate in milliseconds.")]
-        public int messageUpdateRate = 35;
         [Tooltip("The Steam ID for your application.")]
         public string SteamAppID = "480";
 
         private void Awake()
         {
-            if(File.Exists("steam_appid.txt"))
+            if (File.Exists("steam_appid.txt"))
             {
                 string content = File.ReadAllText("steam_appid.txt");
                 if (content != SteamAppID)
@@ -59,7 +58,7 @@ namespace Mirror.FizzySteam
             else
             {
                 Debug.LogError("Client already running!");
-            }            
+            }
         }
         public override bool ClientSend(int channelId, ArraySegment<byte> segment) => client.Send(segment.Array, channelId);
         public override void ClientDisconnect() => client.Disconnect();
@@ -75,7 +74,7 @@ namespace Mirror.FizzySteam
                 return;
             }
 
-            if(server != null && server.Error)
+            if (server != null && server.Error)
             {
                 Debug.Log("Cleaning up old server node with errors.");
                 server.Shutdown();
@@ -95,7 +94,7 @@ namespace Mirror.FizzySteam
 
         public override Uri ServerUri() => throw new NotSupportedException();
 
-        public override bool ServerSend(List<int> connectionIds, int channelId, ArraySegment<byte> segment) => ServerActive()  && server.SendAll(connectionIds, segment.Array, channelId);
+        public override bool ServerSend(List<int> connectionIds, int channelId, ArraySegment<byte> segment) => ServerActive() && server.SendAll(connectionIds, segment.Array, channelId);
         public override bool ServerDisconnect(int connectionId) => ServerActive() && server.Disconnect(connectionId);
         public override string ServerGetClientAddress(int connectionId) => ServerActive() ? server.ServerGetClientAddress(connectionId) : string.Empty;
         public override void ServerStop()
@@ -125,7 +124,7 @@ namespace Mirror.FizzySteam
         {
             channelId = Math.Min(channelId, Channels.Length - 1);
 
-            EP2PSend sendMethod = Channels[channelId];
+            EP2PSend sendMethod = Channels[channelId].Type;
             switch (sendMethod)
             {
                 case EP2PSend.k_EP2PSendUnreliable:
@@ -150,5 +149,16 @@ namespace Mirror.FizzySteam
                 return false;
             }
         }
+    }
+
+    [Serializable]
+    public class SteamChannel
+    {
+        [Tooltip("Channel Type.")]
+        public EP2PSend Type;
+
+        [Tooltip("Message Update Intervall in Milliseconds.")]
+        [Range(1, 20000)]
+        public int UpdateInterval;
     }
 }

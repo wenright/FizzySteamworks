@@ -36,7 +36,6 @@ namespace Mirror.FizzySteam
         private Server(FizzySteamyMirror transport, int maxConnections) : base(transport.Channels)
         {
             this.maxConnections = maxConnections;
-            SetMessageUpdateRate(transport.messageUpdateRate);
             steamToMirrorIds = new BidirectionalDictionary<CSteamID, int>();
             nextConnectionID = 0;
 
