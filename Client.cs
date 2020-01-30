@@ -8,31 +8,43 @@ namespace Mirror.FizzySteam
 {
     public class Client : Common
     {
-        public event Action<Exception> OnReceivedError;
-        public event Action<byte[], int> OnReceivedData;
-        public event Action OnConnected;
-        public event Action OnDisconnected;
+        private event Action<Exception> OnReceivedError;
+        private event Action<byte[], int> OnReceivedData;
+        private event Action OnConnected;
+        private event Action OnDisconnected;
 
-        public TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(25);
+        private TimeSpan ConnectionTimeout;
 
         private CSteamID hostSteamID = CSteamID.Nil;
         private TaskCompletionSource<Task> connectedComplete;
         private CancellationTokenSource cancelToken;
 
-        public bool Connected { get; private set; }
+        private Client(FizzySteamyMirror transport) : base(transport.Channels)
+        {
+            OnConnected += () => transport.OnClientConnected?.Invoke();
+            OnDisconnected += () => transport.OnClientDisconnected?.Invoke();
+            OnReceivedData += (data, channel) => transport.OnClientDataReceived?.Invoke(new ArraySegment<byte>(data), channel);
+            OnReceivedError += (exception) => transport.OnClientError?.Invoke(exception);
+            ConnectionTimeout = TimeSpan.FromSeconds(Math.Min(1, transport.Timeout));
+        }
+
+        public static Client CreateClient(FizzySteamyMirror transport, string host)
+        {
+            Client c = new Client(transport);
+            c.Connect(host);
+            return c;
+        }
 
         public async void Connect(string host)
         {
             cancelToken = new CancellationTokenSource();
 
-            if (Connected)
+            if (Active)
             {
                 Debug.LogError("Client already connected.");
                 OnReceivedError?.Invoke(new Exception("Client already connected"));
                 return;
             }
-
-            Initialise();
 
             try
             {
@@ -84,15 +96,14 @@ namespace Mirror.FizzySteam
 
         public async void Disconnect()
         {
-            if (Connected)
+            if (Active)
             {
                 SendInternal(hostSteamID, disconnectMsgBuffer);
-                Connected = false;
+                Active = false;
                 OnDisconnected?.Invoke();
                 Dispose();
                 cancelToken.Cancel();
 
-                //Wait a short time before calling steams disconnect function so the message has time to go out
                 await Task.Delay(100);
                 CloseP2PSessionWithUser(hostSteamID);
             }
@@ -119,9 +130,9 @@ namespace Mirror.FizzySteam
             {
                 byte[] receiveBuffer;
 
-                while (Connected)
+                while (Active)
                 {
-                    for (int i = 0; i < channels.Length; i++)
+                    for (int i = 0; i < Channels.Length; i++)
                     {
                         while (Receive(out readPacketSize, out clientSteamID, out receiveBuffer, i))
                         {
@@ -161,7 +172,6 @@ namespace Mirror.FizzySteam
             }
         }
 
-        //start a async loop checking for internal messages and processing them. This includes internal connect negotiation and disconnect requests so runs outside "connected"
         private async void InternalReceiveLoop()
         {
             Debug.Log("InternalReceiveLoop Start");
@@ -171,7 +181,7 @@ namespace Mirror.FizzySteam
 
             try
             {
-                while (Connected)
+                while (Active)
                 {
                     while (ReceiveInternal(out readPacketSize, out clientSteamID))
                     {
@@ -187,13 +197,13 @@ namespace Mirror.FizzySteam
                         switch (receiveBufferInternal[0])
                         {
                             case (byte)InternalMessages.ACCEPT_CONNECT:
-                                Connected = true;
+                                Active = true;
                                 OnConnected?.Invoke();
                                 break;
                             case (byte)InternalMessages.DISCONNECT:
-                                if (Connected)
+                                if (Active)
                                 {
-                                    Connected = false;
+                                    Active = false;
                                     OnDisconnected?.Invoke();
                                 }
                                 break;
@@ -208,10 +218,9 @@ namespace Mirror.FizzySteam
             Debug.Log("InternalReceiveLoop Stop");
         }
 
-        // send the data or throw exception
         public bool Send(byte[] data, int channelId)
         {
-            if (Connected)
+            if (Active)
             {
                 Send(hostSteamID, data, channelId);
                 return true;
