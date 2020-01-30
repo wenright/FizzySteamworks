@@ -14,24 +14,15 @@ Both of these projects need to be installed and working before you can use this 
 ## Setting Up
 
 1. Install Mirror (Requires Mirror 8.0+) from the Unity asset store or grab a unitypackage here: **[Download Mirror](https://github.com/vis2k/Mirror/releases)**
-3. Install the unitypackage from the release section
-2. Create a empty object in your scene and attach the **"Steam Manager"** script to it.
+2. Install the unitypackage from the release section
 3. In your **"NetworkManager"** object replace **"Telepathy"** script with **"FizzySteamyMirror"** script.
+4. Enter your Steam App ID in the **"FizzySteamyMirror"** script.
 
-## Building
-1. When Building your game you have to place **"steam_appid.txt"** into the directory of the game. If you cant find it well, just make a **"steam_appid.txt"** and place **480** in side.
-
-2. When running the game make sure you have placed it into steam as a **Non-Steam Game** **Note: This is not required, but some have reported their steam SDK not working without doing this.**
-
-**Note: The 480(Spacewar) appid is a very grey area, technically, it's not allowed but they don't really do anything about it. When you have your own appid from steam then replace the 480 with your own game appid.
+**Note: The  default 480(Spacewar) appid is a very grey area, technically, it's not allowed but they don't really do anything about it. When you have your own appid from steam then replace the 480 with your own game appid.
 If you know a better way around this please make a [Issue ticket.](https://github.com/Chykary/FizzySteamyMirror/issues)**
 
 ## Host
-To be able to have your game working you need to make sure you have steam running in the background. 
-**Note: You can also run it in Unity**
-
-1. Host your game
-2. if it says your playing **"Spacewar"** in Steam **congrats its working!**
+To be able to have your game working you need to make sure you have Steam running in the background. SteamManager will print a Debug Message if it initializes correctly.
 
 ## Client
 Before sending your game to your buddy make sure you have your **steamID64** ready. To find your **steamID64** goto **[Steamid.io](https://steamid.io/lookup)** and enter your steam profile URL.
@@ -42,5 +33,4 @@ Before sending your game to your buddy make sure you have your **steamID64** rea
 5. Then they will be connected to you.
 
 ## Testing your game locally
-
 You cant connect to yourself locally while using **FizzySteamyMirror** since it's using steams P2P. If you want to test your game locally you'll have to use **"Telepathy Transport"** instead of **"Fizzy Steamy Mirror"**.
