@@ -1,6 +1,7 @@
 using Steamworks;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace Mirror.FizzySteam
@@ -17,9 +18,26 @@ namespace Mirror.FizzySteam
         public int Timeout = 25;
         [Tooltip("Message update rate in milliseconds.")]
         public int messageUpdateRate = 35;
+        [Tooltip("The Steam ID for your application.")]
+        public string SteamAppID = "480";
 
-        private void Start()
+        private void Awake()
         {
+            if(File.Exists("steam_appid.txt"))
+            {
+                string content = File.ReadAllText("steam_appid.txt");
+                if (content != SteamAppID)
+                {
+                    File.WriteAllText("steam_appid.txt", SteamAppID.ToString());
+                    Debug.Log($"Updating steam_appid.txt. Previous: {content}, new SteamAppID {SteamAppID}");
+                }
+            }
+            else
+            {
+                File.WriteAllText("steam_appid.txt", SteamAppID.ToString());
+                Debug.Log($"New steam_appid.txt written with SteamAppID {SteamAppID}");
+            }
+
             Debug.Assert(Channels != null && Channels.Length > 0, "No channel configured for FizzySteamMirror.");
         }
 
