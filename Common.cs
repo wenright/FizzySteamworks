@@ -1,14 +1,14 @@
-﻿using UnityEngine;
+﻿using Steamworks;
 using System;
-using Steamworks;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Threading;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Mirror.FizzySteam
 {
-    public abstract class Common
+  public abstract class Common
     {
         public bool Error { get; protected set; }
 
@@ -84,7 +84,7 @@ namespace Mirror.FizzySteam
             SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, channels[channel], channel);
         }
 
-        protected bool Receive(out uint readPacketSize, out CSteamID clientSteamID, out byte[] receiveBuffer, int channel)
+        private bool Receive(out uint readPacketSize, out CSteamID clientSteamID, out byte[] receiveBuffer, int channel)
         {
             uint packetSize;
             if (SteamNetworking.IsP2PPacketAvailable(out packetSize, channel) && packetSize > 0)
@@ -142,12 +142,17 @@ namespace Mirror.FizzySteam
                 Debug.LogException(e);
                 Error = true;
             }
+            catch
+            {
+                Debug.Log("Exception in native code.");
+            }
         }
 
         private async Task ReceiveLoop(CancellationToken t, int channelNum)
         {
             uint readPacketSize;
             CSteamID clientSteamID;
+            TimeSpan delay = updateIntervals[channelNum];
 
             try
             {
@@ -167,7 +172,7 @@ namespace Mirror.FizzySteam
                         }
                     }
 
-                    await Task.Delay(updateIntervals[channelNum]);
+                    await Task.Delay(delay);
                 }
             }
             catch (Exception e)

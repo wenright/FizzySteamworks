@@ -149,7 +149,12 @@ namespace Mirror.FizzySteam
                 return false;
             }
         }
-    }
+
+        private void OnDestroy()
+        {
+            Shutdown();
+        }
+    } 
 
     [Serializable]
     public class SteamChannel
