@@ -142,10 +142,6 @@ namespace Mirror.FizzySteam
                 Debug.LogException(e);
                 Error = true;
             }
-            catch
-            {
-                Debug.Log("Exception in native code.");
-            }
         }
 
         private async Task ReceiveLoop(CancellationToken t, int channelNum)
