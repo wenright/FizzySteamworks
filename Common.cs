@@ -40,7 +40,7 @@ namespace Mirror.FizzySteam
         {
             Debug.Assert(channels.Length < 100, "FizzySteamyMirror does not support more than 99 channels.");
             this.channels = channels.Select(x => x.Type).ToArray();
-            updateIntervals = channels.Select(x => TimeSpan.FromMilliseconds(Mathf.Min(1, x.UpdateInterval))).ToArray();
+            updateIntervals = channels.Select(x => TimeSpan.FromMilliseconds(Mathf.Max(1, x.UpdateInterval))).ToArray();
 
             callback_OnNewConnection = Callback<P2PSessionRequest_t>.Create(OnNewConnection);
             callback_OnConnectFail = Callback<P2PSessionConnectFail_t>.Create(OnConnectFail);

@@ -61,7 +61,7 @@ namespace Mirror.FizzySteam
             }
         }
         public override bool ClientSend(int channelId, ArraySegment<byte> segment) => client.Send(segment.Array, channelId);
-        public override void ClientDisconnect() => client.Disconnect();
+        public override void ClientDisconnect() => client?.Disconnect();
 
 
         // server
