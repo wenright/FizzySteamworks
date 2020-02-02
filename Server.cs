@@ -26,11 +26,7 @@ namespace Mirror.FizzySteam
             s.OnReceivedData += (id, data, channel) => transport.OnServerDataReceived?.Invoke(id, new ArraySegment<byte>(data), channel);
             s.OnReceivedError += (id, exception) => transport.OnServerError?.Invoke(id, exception);
 
-            if (SteamManager.Initialized)
-            {
-                s.Listen();
-            }
-            else
+            if (!SteamManager.Initialized)
             {
                 s.Error = true;
                 Debug.LogError("SteamWorks not initialized");
@@ -44,12 +40,6 @@ namespace Mirror.FizzySteam
             this.maxConnections = maxConnections;
             steamToMirrorIds = new BidirectionalDictionary<CSteamID, int>();
             nextConnectionID = 1;
-        }
-
-        private void Listen()
-        {
-            StartInternalLoop();
-            StartDataLoops();
         }
 
         protected override void OnNewConnection(P2PSessionRequest_t result) => SteamNetworking.AcceptP2PSessionWithUser(result.m_steamIDRemote);
@@ -73,8 +63,8 @@ namespace Mirror.FizzySteam
                 case InternalMessages.DISCONNECT:
                     if (steamToMirrorIds.Contains(clientSteamID))
                     {
-                        steamToMirrorIds.Remove(clientSteamID);
                         OnDisconnected?.Invoke(steamToMirrorIds[clientSteamID]);
+                        steamToMirrorIds.Remove(clientSteamID);
                         CloseP2PSessionWithUser(clientSteamID);
                     }
                     else
@@ -127,14 +117,14 @@ namespace Mirror.FizzySteam
 
             //Wait a short time before calling steams disconnect function so the message has time to go out
             await Task.Delay(100);
-            
+
             OnDisconnected?.Invoke(connId);
             CloseP2PSessionWithUser(steamID);
         }
 
         public bool SendAll(List<int> connectionIds, byte[] data, int channelId)
         {
-            foreach(int connId in connectionIds)
+            foreach (int connId in connectionIds)
             {
                 if (steamToMirrorIds.Contains(connId))
                 {

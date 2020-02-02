@@ -22,7 +22,7 @@ namespace Mirror.FizzySteam
 
         private Client(FizzySteamyMirror transport) : base(transport.Channels)
         {
-            ConnectionTimeout = TimeSpan.FromSeconds(Math.Min(1, transport.Timeout));
+            ConnectionTimeout = TimeSpan.FromSeconds(Math.Max(1, transport.Timeout));
         }
 
         public static Client CreateClient(FizzySteamyMirror transport, string host)
@@ -54,9 +54,6 @@ namespace Mirror.FizzySteam
             try
             {
                 hostSteamID = new CSteamID(Convert.ToUInt64(host));
-
-                StartInternalLoop();
-
                 connectedComplete = new TaskCompletionSource<Task>();
 
                 OnConnected += SetConnectedComplete;
@@ -69,16 +66,13 @@ namespace Mirror.FizzySteam
 
                 if (await Task.WhenAny(connectedCompleteTask, Task.Delay(ConnectionTimeout, cancelToken.Token)) != connectedCompleteTask)
                 {
-                    //Timed out waiting for connection to complete
                     OnConnected -= SetConnectedComplete;
 
                     Exception e = new Exception("Timed out while connecting");
-                    OnReceivedError?.Invoke(e);
                     throw e;
                 }
 
                 OnConnected -= SetConnectedComplete;
-                StartDataLoops();
             }
             catch (FormatException)
             {
@@ -90,7 +84,6 @@ namespace Mirror.FizzySteam
             catch (Exception ex)
             {
                 Error = true;
-                Debug.LogError("Failed to connect " + ex);
                 OnReceivedError?.Invoke(ex);
             }
         }
@@ -98,8 +91,7 @@ namespace Mirror.FizzySteam
         public void Disconnect()
         {
             SendInternal(hostSteamID, disconnectMsgBuffer);
-            OnDisconnected?.Invoke();
-            Shutdown();
+            Dispose();
             cancelToken.Cancel();
 
             Task.Delay(100).ContinueWith(t => CloseP2PSessionWithUser(hostSteamID));
@@ -137,12 +129,13 @@ namespace Mirror.FizzySteam
             {
                 case InternalMessages.ACCEPT_CONNECT:
                     Connected = true;
+                    Debug.Log("Connection established.");
                     OnConnected?.Invoke();
                     break;
                 case InternalMessages.DISCONNECT:
                     Connected = false;
                     Error = true;
-                    Shutdown();
+                    Debug.Log("Disconnected.");
                     OnDisconnected?.Invoke();
                     break;
                 default:

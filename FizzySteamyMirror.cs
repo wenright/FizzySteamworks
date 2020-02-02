@@ -11,11 +11,12 @@ namespace Mirror.FizzySteam
     public class FizzySteamyMirror : Transport
     {
         private const string STEAM_SCHEME = "steam";
+
         private Client client;
         private Server server;
 
         [SerializeField]
-        public SteamChannel[] Channels = new SteamChannel[1] { new SteamChannel() { Type = EP2PSend.k_EP2PSendReliable, UpdateInterval = 35 } };
+        public EP2PSend[] Channels = new EP2PSend[1] { EP2PSend.k_EP2PSendReliable };
 
         [Tooltip("Timeout for connecting in seconds.")]
         public int Timeout = 25;
@@ -42,6 +43,25 @@ namespace Mirror.FizzySteam
             Debug.Assert(Channels != null && Channels.Length > 0, "No channel configured for FizzySteamMirror.");
         }
 
+        private void LateUpdate()
+        {
+            if (client != null)
+            {
+                if (client.Connected)
+                {
+                    client.ReceiveData();
+                }
+
+                client.ReceiveInternal();
+            }
+
+            if (server != null)
+            {
+                server.ReceiveInternal();
+                server.ReceiveData();
+            }
+        }
+
         public override bool ClientConnected() => client != null && client.Connected;
         public override void ClientConnect(string address)
         {
@@ -66,11 +86,15 @@ namespace Mirror.FizzySteam
             if (uri.Scheme != STEAM_SCHEME)
                 throw new ArgumentException($"Invalid url {uri}, use {STEAM_SCHEME}://SteamID instead", nameof(uri));
 
-            Client.CreateClient(this, uri.Host);
+            ClientConnect(uri.Host);
         }
 
         public override bool ClientSend(int channelId, ArraySegment<byte> segment) => client.Send(segment.Array, channelId);
-        public override void ClientDisconnect() => client?.Disconnect();
+        public override void ClientDisconnect()
+        {
+            client?.Disconnect();
+            client = null;
+        }
 
         public override bool ServerActive() => server != null && !server.Error;
         public override void ServerStart()
@@ -84,7 +108,7 @@ namespace Mirror.FizzySteam
             if (server != null && server.Error)
             {
                 Debug.Log("Cleaning up old server node with errors.");
-                server.Shutdown();
+                server.Dispose();
                 server = null;
             }
 
@@ -97,7 +121,6 @@ namespace Mirror.FizzySteam
                 Debug.LogError("Server already started!");
             }
         }
-
 
         public override Uri ServerUri()
         {
@@ -118,7 +141,7 @@ namespace Mirror.FizzySteam
             if (server != null)
             {
                 Debug.Log("Shutting down server.");
-                server.Shutdown();
+                server.Dispose();
                 server = null;
             }
             else
@@ -129,7 +152,7 @@ namespace Mirror.FizzySteam
 
         public override void Shutdown()
         {
-            server?.Shutdown();
+            server?.Dispose();
             client?.Disconnect();
 
             server = null;
@@ -140,7 +163,7 @@ namespace Mirror.FizzySteam
         {
             channelId = Math.Min(channelId, Channels.Length - 1);
 
-            EP2PSend sendMethod = Channels[channelId].Type;
+            EP2PSend sendMethod = Channels[channelId];
             switch (sendMethod)
             {
                 case EP2PSend.k_EP2PSendUnreliable:
@@ -170,16 +193,5 @@ namespace Mirror.FizzySteam
         {
             Shutdown();
         }
-    }
-
-    [Serializable]
-    public class SteamChannel
-    {
-        [Tooltip("Channel Type.")]
-        public EP2PSend Type;
-
-        [Tooltip("Message Update Intervall in Milliseconds.")]
-        [Range(1, 20000)]
-        public int UpdateInterval;
     }
 }
