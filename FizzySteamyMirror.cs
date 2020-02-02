@@ -10,6 +10,7 @@ namespace Mirror.FizzySteam
     [HelpURL("https://github.com/Chykary/FizzySteamyMirror")]
     public class FizzySteamyMirror : Transport
     {
+        private const string STEAM_SCHEME = "steam";
         private Client client;
         private Server server;
 
@@ -41,7 +42,6 @@ namespace Mirror.FizzySteam
             Debug.Assert(Channels != null && Channels.Length > 0, "No channel configured for FizzySteamMirror.");
         }
 
-        // client
         public override bool ClientConnected() => client != null && client.Connected;
         public override void ClientConnect(string address)
         {
@@ -60,11 +60,18 @@ namespace Mirror.FizzySteam
                 Debug.LogError("Client already running!");
             }
         }
+
+        public override void ClientConnect(Uri uri)
+        {
+            if (uri.Scheme != STEAM_SCHEME)
+                throw new ArgumentException($"Invalid url {uri}, use {STEAM_SCHEME}://SteamID instead", nameof(uri));
+
+            Client.CreateClient(this, uri.Host);
+        }
+
         public override bool ClientSend(int channelId, ArraySegment<byte> segment) => client.Send(segment.Array, channelId);
         public override void ClientDisconnect() => client?.Disconnect();
 
-
-        // server
         public override bool ServerActive() => server != null && !server.Error;
         public override void ServerStart()
         {
@@ -92,7 +99,16 @@ namespace Mirror.FizzySteam
         }
 
 
-        public override Uri ServerUri() => throw new NotSupportedException();
+        public override Uri ServerUri()
+        {
+            var steamBuilder = new UriBuilder
+            {
+                Scheme = STEAM_SCHEME,
+                Host = SteamUser.GetSteamID().m_SteamID.ToString()
+            };
+
+            return steamBuilder.Uri;
+        }
 
         public override bool ServerSend(List<int> connectionIds, int channelId, ArraySegment<byte> segment) => ServerActive() && server.SendAll(connectionIds, segment.Array, channelId);
         public override bool ServerDisconnect(int connectionId) => ServerActive() && server.Disconnect(connectionId);
@@ -154,7 +170,7 @@ namespace Mirror.FizzySteam
         {
             Shutdown();
         }
-    } 
+    }
 
     [Serializable]
     public class SteamChannel
