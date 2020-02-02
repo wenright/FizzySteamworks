@@ -20,6 +20,12 @@ namespace Mirror.FizzySteam
         public static Server CreateServer(FizzySteamyMirror transport, int maxConnections)
         {
             Server s = new Server(transport, maxConnections);
+
+            s.OnConnected += (id) => transport.OnServerConnected?.Invoke(id);
+            s.OnDisconnected += (id) => transport.OnServerDisconnected?.Invoke(id);
+            s.OnReceivedData += (id, data, channel) => transport.OnServerDataReceived?.Invoke(id, new ArraySegment<byte>(data), channel);
+            s.OnReceivedError += (id, exception) => transport.OnServerError?.Invoke(id, exception);
+
             if (SteamManager.Initialized)
             {
                 s.Listen();
@@ -37,12 +43,7 @@ namespace Mirror.FizzySteam
         {
             this.maxConnections = maxConnections;
             steamToMirrorIds = new BidirectionalDictionary<CSteamID, int>();
-            nextConnectionID = 0;
-
-            OnConnected += (id) => transport.OnServerConnected?.Invoke(id);
-            OnDisconnected += (id) => transport.OnServerDisconnected?.Invoke(id);
-            OnReceivedData += (id, data, channel) => transport.OnServerDataReceived?.Invoke(id, new ArraySegment<byte>(data), channel);
-            OnReceivedError += (id, exception) => transport.OnServerError?.Invoke(id, exception);
+            nextConnectionID = 1;
         }
 
         private void Listen()

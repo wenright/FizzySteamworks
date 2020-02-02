@@ -22,16 +22,17 @@ namespace Mirror.FizzySteam
 
         private Client(FizzySteamyMirror transport) : base(transport.Channels)
         {
-            OnConnected += () => transport.OnClientConnected?.Invoke();
-            OnDisconnected += () => transport.OnClientDisconnected?.Invoke();
-            OnReceivedData += (data, channel) => transport.OnClientDataReceived?.Invoke(new ArraySegment<byte>(data), channel);
-            OnReceivedError += (exception) => transport.OnClientError?.Invoke(exception);
             ConnectionTimeout = TimeSpan.FromSeconds(Math.Min(1, transport.Timeout));
         }
 
         public static Client CreateClient(FizzySteamyMirror transport, string host)
         {
             Client c = new Client(transport);
+
+            c.OnConnected += () => transport.OnClientConnected?.Invoke();
+            c.OnDisconnected += () => transport.OnClientDisconnected?.Invoke();
+            c.OnReceivedData += (data, channel) => transport.OnClientDataReceived?.Invoke(new ArraySegment<byte>(data), channel);
+            c.OnReceivedError += (exception) => transport.OnClientError?.Invoke(exception);
 
             if (SteamManager.Initialized)
             {
