@@ -49,14 +49,14 @@ namespace Mirror.FizzySteam
 
         private void LateUpdate()
         {
-            if(activeNode != null)
+            if (activeNode != null)
             {
                 activeNode.ReceiveData();
                 activeNode.ReceiveInternal();
             }
         }
 
-        public override bool ClientConnected() => client != null && client.Connected;
+        public override bool ClientConnected() => ClientActive() && client.Connected;
         public override void ClientConnect(string address)
         {
             if (!SteamManager.Initialized)
@@ -65,13 +65,13 @@ namespace Mirror.FizzySteam
                 return;
             }
 
-            if(server != null)
+            if (ServerActive())
             {
                 Debug.LogError("Transport already running as server!");
                 return;
             }
 
-            if (client == null)
+            if (!ClientActive())
             {
                 Debug.Log($"Starting client, target address {address}.");
 
@@ -94,7 +94,14 @@ namespace Mirror.FizzySteam
         }
 
         public override bool ClientSend(int channelId, ArraySegment<byte> segment) => client.Send(segment.Array, channelId);
-        public override void ClientDisconnect() => Shutdown();
+        public override void ClientDisconnect()
+        {
+            if (ClientActive())
+            {
+                Shutdown();
+            }
+        }
+        public bool ClientActive() => client != null;
 
 
         public override bool ServerActive() => server != null;
@@ -106,7 +113,7 @@ namespace Mirror.FizzySteam
                 return;
             }
 
-            if (client != null)
+            if (ClientActive())
             {
                 Debug.LogError("Transport already running as client!");
                 return;
@@ -143,23 +150,19 @@ namespace Mirror.FizzySteam
         {
             if (ServerActive())
             {
-                Debug.Log("Shutting down server.");
                 Shutdown();
-            }
-            else
-            {
-                Debug.Log("No server active, did not stop a server.");
             }
         }
 
         public override void Shutdown()
         {
-            server?.Dispose();
+            server?.Shutdown();
             client?.Disconnect();
 
             server = null;
             client = null;
             activeNode = null;
+            Debug.Log("Transport shut down.");
         }
 
         public override int GetMaxPacketSize(int channelId)
@@ -194,7 +197,15 @@ namespace Mirror.FizzySteam
 
         private void OnDestroy()
         {
-            Shutdown();
+            if(server != null)
+            {
+                server.Destroyed = true;
+            }
+
+            if (activeNode != null)
+            {
+                Shutdown();
+            }
         }
     }
 }

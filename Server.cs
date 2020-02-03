@@ -1,6 +1,8 @@
 ﻿using Steamworks;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -8,6 +10,7 @@ namespace Mirror.FizzySteam
 {
     public class Server : Common
     {
+        public bool Destroyed;
         private event Action<int> OnConnected;
         private event Action<int, byte[], int> OnReceivedData;
         private event Action<int> OnDisconnected;
@@ -16,9 +19,10 @@ namespace Mirror.FizzySteam
         private BidirectionalDictionary<CSteamID, int> steamToMirrorIds;
         private int maxConnections;
         private int nextConnectionID;
+        private FizzySteamyMirror transport;
 
         public static Server CreateServer(FizzySteamyMirror transport, int maxConnections)
-        {
+        {            
             Server s = new Server(transport, maxConnections);
 
             s.OnConnected += (id) => transport.OnServerConnected?.Invoke(id);
@@ -39,6 +43,7 @@ namespace Mirror.FizzySteam
             this.maxConnections = maxConnections;
             steamToMirrorIds = new BidirectionalDictionary<CSteamID, int>();
             nextConnectionID = 1;
+            this.transport = transport;
         }
 
         protected override void OnNewConnection(P2PSessionRequest_t result) => SteamNetworking.AcceptP2PSessionWithUser(result.m_steamIDRemote);
@@ -58,6 +63,7 @@ namespace Mirror.FizzySteam
                     int connectionId = nextConnectionID++;
                     steamToMirrorIds.Add(clientSteamID, connectionId);
                     OnConnected?.Invoke(connectionId);
+                    Debug.Log($"Client with SteamID {clientSteamID} connected. Assigning connection id {connectionId}");
                     break;
                 case InternalMessages.DISCONNECT:
                     if (steamToMirrorIds.Contains(clientSteamID))
@@ -65,10 +71,10 @@ namespace Mirror.FizzySteam
                         OnDisconnected?.Invoke(steamToMirrorIds[clientSteamID]);
                         steamToMirrorIds.Remove(clientSteamID);
                         CloseP2PSessionWithUser(clientSteamID);
+                        Debug.Log($"Client with SteamID {clientSteamID} disconnected.");
                     }
                     else
                     {
-                        Debug.LogError("Trying to disconnect a client thats not known SteamID " + clientSteamID);
                         OnReceivedError?.Invoke(-1, new Exception("ERROR Unknown SteamID"));
                     }
 
@@ -98,7 +104,12 @@ namespace Mirror.FizzySteam
         {
             if (steamToMirrorIds.Contains(connectionId))
             {
-                Disconnect(steamToMirrorIds[connectionId], connectionId);
+                CSteamID steamID = steamToMirrorIds[connectionId];
+                steamToMirrorIds.Remove(connectionId);
+
+                SendInternal(steamID, disconnectMsgBuffer);
+                transport.StartCoroutine(WaitDisconnect(steamID));
+
                 return true;
             }
             else
@@ -108,17 +119,15 @@ namespace Mirror.FizzySteam
             }
         }
 
-        private void Disconnect(CSteamID steamID, int connId)
+        private IEnumerator WaitDisconnect(CSteamID steamID)
         {
-            steamToMirrorIds.Remove(connId);
+            yield return new WaitForSeconds(0.1f);
+            CloseP2PSessionWithUser(steamID);
+        }
 
-            SendInternal(steamID, disconnectMsgBuffer);
-
-            Task.Delay(100).ContinueWith(t =>
-           {
-               OnDisconnected?.Invoke(connId);
-               CloseP2PSessionWithUser(steamID);
-           });
+        public void Shutdown()
+        {
+            Dispose();
         }
 
         public bool SendAll(List<int> connectionIds, byte[] data, int channelId)

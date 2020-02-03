@@ -34,7 +34,7 @@ namespace Mirror.FizzySteam
             callback_OnConnectFail = Callback<P2PSessionConnectFail_t>.Create(OnConnectFail);
         }
 
-        public void Dispose()
+        protected void Dispose()
         {
             if (callback_OnNewConnection != null)
             {
@@ -51,11 +51,7 @@ namespace Mirror.FizzySteam
 
         protected abstract void OnNewConnection(P2PSessionRequest_t result);
 
-        protected virtual void OnConnectFail(P2PSessionConnectFail_t result)
-        {
-            Debug.Log("OnConnectFail " + result);
-            throw new Exception("Failed to connect");
-        }
+        protected virtual void OnConnectFail(P2PSessionConnectFail_t result) => throw new Exception("Connection failed.");
 
         protected void SendInternal(CSteamID host, byte[] msgBuffer) => SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, EP2PSend.k_EP2PSendReliable, SEND_INTERNAL);
 
