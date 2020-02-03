@@ -28,7 +28,6 @@ namespace Mirror.FizzySteam
 
             if (!SteamManager.Initialized)
             {
-                s.Error = true;
                 Debug.LogError("SteamWorks not initialized");
             }
 
@@ -109,26 +108,27 @@ namespace Mirror.FizzySteam
             }
         }
 
-        private async void Disconnect(CSteamID steamID, int connId)
+        private void Disconnect(CSteamID steamID, int connId)
         {
             steamToMirrorIds.Remove(connId);
 
             SendInternal(steamID, disconnectMsgBuffer);
 
-            //Wait a short time before calling steams disconnect function so the message has time to go out
-            await Task.Delay(100);
-
-            OnDisconnected?.Invoke(connId);
-            CloseP2PSessionWithUser(steamID);
+            Task.Delay(100).ContinueWith(t =>
+           {
+               OnDisconnected?.Invoke(connId);
+               CloseP2PSessionWithUser(steamID);
+           });
         }
 
         public bool SendAll(List<int> connectionIds, byte[] data, int channelId)
         {
+            bool success = true;
             foreach (int connId in connectionIds)
             {
                 if (steamToMirrorIds.Contains(connId))
                 {
-                    Send(steamToMirrorIds[connId], data, channelId);
+                    success = success && Send(steamToMirrorIds[connId], data, channelId);
                 }
                 else
                 {
@@ -137,7 +137,7 @@ namespace Mirror.FizzySteam
                 }
             }
 
-            return true;
+            return success;
         }
 
         public string ServerGetClientAddress(int connectionId)

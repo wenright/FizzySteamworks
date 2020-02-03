@@ -1,14 +1,11 @@
 ﻿using Steamworks;
 using System;
-using System.Linq;
 using UnityEngine;
 
 namespace Mirror.FizzySteam
 {
     public abstract class Common
     {
-        public bool Error { get; protected set; }
-
         private EP2PSend[] channels;
 
         private const int SEND_INTERNAL = 100;
@@ -39,13 +36,13 @@ namespace Mirror.FizzySteam
 
         public void Dispose()
         {
-            if (callback_OnNewConnection == null)
+            if (callback_OnNewConnection != null)
             {
                 callback_OnNewConnection.Dispose();
                 callback_OnNewConnection = null;
             }
 
-            if (callback_OnConnectFail == null)
+            if (callback_OnConnectFail != null)
             {
                 callback_OnConnectFail.Dispose();
                 callback_OnConnectFail = null;
@@ -57,7 +54,6 @@ namespace Mirror.FizzySteam
         protected virtual void OnConnectFail(P2PSessionConnectFail_t result)
         {
             Debug.Log("OnConnectFail " + result);
-            Error = true;
             throw new Exception("Failed to connect");
         }
 
@@ -65,11 +61,7 @@ namespace Mirror.FizzySteam
 
         private bool ReceiveInternal(out uint readPacketSize, out CSteamID clientSteamID) => SteamNetworking.ReadP2PPacket(receiveBufferInternal, 1, out readPacketSize, out clientSteamID, SEND_INTERNAL);
 
-        protected void Send(CSteamID host, byte[] msgBuffer, int channel)
-        {
-            Debug.Assert(channel <= channels.Length, $"Channel {channel} not configured for FizzySteamMirror.");
-            SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, channels[channel], channel);
-        }
+        protected bool Send(CSteamID host, byte[] msgBuffer, int channel) => SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, channels[channel], channel);
 
         private bool Receive(out uint readPacketSize, out CSteamID clientSteamID, out byte[] receiveBuffer, int channel)
         {
@@ -107,7 +99,6 @@ namespace Mirror.FizzySteam
             catch (Exception e)
             {
                 Debug.LogException(e);
-                Error = true;
             }
         }
 
@@ -130,7 +121,6 @@ namespace Mirror.FizzySteam
             catch (Exception e)
             {
                 Debug.LogException(e);
-                Error = true;
             }
         }
 

@@ -40,7 +40,6 @@ namespace Mirror.FizzySteam
             }
             else
             {
-                c.Error = true;
                 Debug.LogError("SteamWorks not initialized");
             }
 
@@ -67,23 +66,17 @@ namespace Mirror.FizzySteam
                 if (await Task.WhenAny(connectedCompleteTask, Task.Delay(ConnectionTimeout, cancelToken.Token)) != connectedCompleteTask)
                 {
                     OnConnected -= SetConnectedComplete;
-
-                    Exception e = new Exception("Timed out while connecting");
-                    throw e;
+                    throw new Exception("Timed out while connecting");
                 }
 
                 OnConnected -= SetConnectedComplete;
             }
             catch (FormatException)
             {
-                Error = true;
-                Debug.LogError("Failed to connect ERROR passing steam ID address");
                 OnReceivedError?.Invoke(new Exception("ERROR passing steam ID address"));
-                return;
             }
             catch (Exception ex)
             {
-                Error = true;
                 OnReceivedError?.Invoke(ex);
             }
         }
@@ -98,7 +91,6 @@ namespace Mirror.FizzySteam
         }
 
         private void SetConnectedComplete() => connectedComplete.SetResult(connectedComplete.Task);
-
 
         protected override void OnReceiveData(byte[] data, CSteamID clientSteamID, int channel)
         {
@@ -134,7 +126,6 @@ namespace Mirror.FizzySteam
                     break;
                 case InternalMessages.DISCONNECT:
                     Connected = false;
-                    Error = true;
                     Debug.Log("Disconnected.");
                     OnDisconnected?.Invoke();
                     break;

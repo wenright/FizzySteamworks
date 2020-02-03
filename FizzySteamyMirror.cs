@@ -73,6 +73,7 @@ namespace Mirror.FizzySteam
 
             if (client == null)
             {
+                Debug.Log($"Starting client, target address {address}.");
                 client = Client.CreateClient(this, address);
             }
             else
@@ -96,7 +97,7 @@ namespace Mirror.FizzySteam
             client = null;
         }
 
-        public override bool ServerActive() => server != null && !server.Error;
+        public override bool ServerActive() => server != null;
         public override void ServerStart()
         {
             if (!SteamManager.Initialized)
@@ -105,15 +106,9 @@ namespace Mirror.FizzySteam
                 return;
             }
 
-            if (server != null && server.Error)
-            {
-                Debug.Log("Cleaning up old server node with errors.");
-                server.Dispose();
-                server = null;
-            }
-
             if (server == null)
             {
+                Debug.Log("Starting server.");
                 server = Server.CreateServer(this, NetworkManager.singleton.maxConnections);
             }
             else
