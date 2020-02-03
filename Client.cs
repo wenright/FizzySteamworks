@@ -20,7 +20,7 @@ namespace Mirror.FizzySteam
         private TaskCompletionSource<Task> connectedComplete;
         private CancellationTokenSource cancelToken;
 
-        private Client(FizzySteamyMirror transport) : base(transport.Channels)
+        private Client(FizzySteamyMirror transport) : base(transport)
         {
             ConnectionTimeout = TimeSpan.FromSeconds(Math.Max(1, transport.Timeout));
         }
@@ -87,7 +87,7 @@ namespace Mirror.FizzySteam
             Dispose();
             cancelToken.Cancel();
 
-            Task.Delay(100).ContinueWith(t => CloseP2PSessionWithUser(hostSteamID));
+            transport.StartCoroutine(WaitDisconnect(hostSteamID));
         }
 
         private void SetConnectedComplete() => connectedComplete.SetResult(connectedComplete.Task);

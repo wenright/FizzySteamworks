@@ -1,5 +1,6 @@
 ﻿using Steamworks;
 using System;
+using System.Collections;
 using UnityEngine;
 
 namespace Mirror.FizzySteam
@@ -25,13 +26,21 @@ namespace Mirror.FizzySteam
         readonly protected byte[] disconnectMsgBuffer = new byte[] { (byte)InternalMessages.DISCONNECT };
         readonly protected byte[] receiveBufferInternal = new byte[1];
 
-        protected Common(EP2PSend[] channels)
+        protected readonly FizzySteamyMirror transport;
+
+        protected Common(FizzySteamyMirror transport)
         {
             Debug.Assert(channels.Length < 100, "FizzySteamyMirror does not support more than 99 channels.");
-            this.channels = channels;
+            this.channels = transport.Channels;
 
             callback_OnNewConnection = Callback<P2PSessionRequest_t>.Create(OnNewConnection);
             callback_OnConnectFail = Callback<P2PSessionConnectFail_t>.Create(OnConnectFail);
+        }
+
+        protected IEnumerator WaitDisconnect(CSteamID steamID)
+        {
+            yield return new WaitForSeconds(0.1f);
+            CloseP2PSessionWithUser(steamID);
         }
 
         protected void Dispose()

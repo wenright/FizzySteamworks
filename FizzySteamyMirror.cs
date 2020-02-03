@@ -197,11 +197,6 @@ namespace Mirror.FizzySteam
 
         private void OnDestroy()
         {
-            if(server != null)
-            {
-                server.Destroyed = true;
-            }
-
             if (activeNode != null)
             {
                 Shutdown();

@@ -1,16 +1,12 @@
 ﻿using Steamworks;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Mirror.FizzySteam
 {
     public class Server : Common
     {
-        public bool Destroyed;
         private event Action<int> OnConnected;
         private event Action<int, byte[], int> OnReceivedData;
         private event Action<int> OnDisconnected;
@@ -19,7 +15,6 @@ namespace Mirror.FizzySteam
         private BidirectionalDictionary<CSteamID, int> steamToMirrorIds;
         private int maxConnections;
         private int nextConnectionID;
-        private FizzySteamyMirror transport;
 
         public static Server CreateServer(FizzySteamyMirror transport, int maxConnections)
         {            
@@ -38,12 +33,11 @@ namespace Mirror.FizzySteam
             return s;
         }
 
-        private Server(FizzySteamyMirror transport, int maxConnections) : base(transport.Channels)
+        private Server(FizzySteamyMirror transport, int maxConnections) : base(transport)
         {
             this.maxConnections = maxConnections;
             steamToMirrorIds = new BidirectionalDictionary<CSteamID, int>();
             nextConnectionID = 1;
-            this.transport = transport;
         }
 
         protected override void OnNewConnection(P2PSessionRequest_t result) => SteamNetworking.AcceptP2PSessionWithUser(result.m_steamIDRemote);
@@ -117,12 +111,6 @@ namespace Mirror.FizzySteam
                 Debug.LogWarning("Trying to disconnect unknown connection id: " + connectionId);
                 return false;
             }
-        }
-
-        private IEnumerator WaitDisconnect(CSteamID steamID)
-        {
-            yield return new WaitForSeconds(0.1f);
-            CloseP2PSessionWithUser(steamID);
         }
 
         public void Shutdown()
