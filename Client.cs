@@ -136,10 +136,6 @@ namespace Mirror.FizzySteam
         }
 
 
-        public bool Send(byte[] data, int channelId)
-        {
-            Send(hostSteamID, data, channelId);
-            return true;
-        }
+        public bool Send(byte[] data, int channelId) => Send(hostSteamID, data, channelId);
     }
 }

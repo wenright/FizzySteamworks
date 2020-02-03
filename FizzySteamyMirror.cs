@@ -15,6 +15,8 @@ namespace Mirror.FizzySteam
         private Client client;
         private Server server;
 
+        private Common activeNode;
+
         [SerializeField]
         public EP2PSend[] Channels = new EP2PSend[1] { EP2PSend.k_EP2PSendReliable };
 
@@ -45,20 +47,10 @@ namespace Mirror.FizzySteam
 
         private void LateUpdate()
         {
-            if (client != null)
+            if(activeNode != null)
             {
-                if (client.Connected)
-                {
-                    client.ReceiveData();
-                }
-
-                client.ReceiveInternal();
-            }
-
-            if (server != null)
-            {
-                server.ReceiveInternal();
-                server.ReceiveData();
+                activeNode.ReceiveData();
+                activeNode.ReceiveInternal();
             }
         }
 
@@ -71,10 +63,17 @@ namespace Mirror.FizzySteam
                 return;
             }
 
+            if(server != null)
+            {
+                Debug.LogError("Transport already running as server!");
+                return;
+            }
+
             if (client == null)
             {
                 Debug.Log($"Starting client, target address {address}.");
                 client = Client.CreateClient(this, address);
+                activeNode = client;
             }
             else
             {
@@ -91,11 +90,8 @@ namespace Mirror.FizzySteam
         }
 
         public override bool ClientSend(int channelId, ArraySegment<byte> segment) => client.Send(segment.Array, channelId);
-        public override void ClientDisconnect()
-        {
-            client?.Disconnect();
-            client = null;
-        }
+        public override void ClientDisconnect() => Shutdown();
+
 
         public override bool ServerActive() => server != null;
         public override void ServerStart()
@@ -106,10 +102,17 @@ namespace Mirror.FizzySteam
                 return;
             }
 
-            if (server == null)
+            if (client != null)
+            {
+                Debug.LogError("Transport already running as client!");
+                return;
+            }
+
+            if (!ServerActive())
             {
                 Debug.Log("Starting server.");
                 server = Server.CreateServer(this, NetworkManager.singleton.maxConnections);
+                activeNode = server;
             }
             else
             {
@@ -133,11 +136,10 @@ namespace Mirror.FizzySteam
         public override string ServerGetClientAddress(int connectionId) => ServerActive() ? server.ServerGetClientAddress(connectionId) : string.Empty;
         public override void ServerStop()
         {
-            if (server != null)
+            if (ServerActive())
             {
                 Debug.Log("Shutting down server.");
-                server.Dispose();
-                server = null;
+                Shutdown();
             }
             else
             {
@@ -152,6 +154,7 @@ namespace Mirror.FizzySteam
 
             server = null;
             client = null;
+            activeNode = null;
         }
 
         public override int GetMaxPacketSize(int channelId)
