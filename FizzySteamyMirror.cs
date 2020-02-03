@@ -24,6 +24,8 @@ namespace Mirror.FizzySteam
         public int Timeout = 25;
         [Tooltip("The Steam ID for your application.")]
         public string SteamAppID = "480";
+        [Tooltip("Allow or disallow P2P connections to fall back to being relayed through the Steam servers if a direct connection or NAT-traversal cannot be established.")]
+        public bool AllowSteamRelay = true;
 
         private void Awake()
         {
@@ -72,6 +74,8 @@ namespace Mirror.FizzySteam
             if (client == null)
             {
                 Debug.Log($"Starting client, target address {address}.");
+
+                SteamNetworking.AllowP2PPacketRelay(AllowSteamRelay);
                 client = Client.CreateClient(this, address);
                 activeNode = client;
             }
@@ -111,6 +115,7 @@ namespace Mirror.FizzySteam
             if (!ServerActive())
             {
                 Debug.Log("Starting server.");
+                SteamNetworking.AllowP2PPacketRelay(AllowSteamRelay);
                 server = Server.CreateServer(this, NetworkManager.singleton.maxConnections);
                 activeNode = server;
             }
