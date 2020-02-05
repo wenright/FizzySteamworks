@@ -27,6 +27,10 @@ namespace Mirror.FizzySteam
         [Tooltip("Allow or disallow P2P connections to fall back to being relayed through the Steam servers if a direct connection or NAT-traversal cannot be established.")]
         public bool AllowSteamRelay = true;
 
+        [Header("Info")]
+        [Tooltip("This will display your Steam User ID when you start or connect to a server.")]
+        public ulong SteamUserID;
+
         private void Awake()
         {
             const string fileName = "steam_appid.txt";
@@ -46,6 +50,16 @@ namespace Mirror.FizzySteam
             }
 
             Debug.Assert(Channels != null && Channels.Length > 0, "No channel configured for FizzySteamMirror.");
+
+            Invoke(nameof(FetchSteamID), 1f);
+        }
+
+        private void FetchSteamID()
+        {
+            if (SteamManager.Initialized)
+            {
+                SteamUserID = SteamUser.GetSteamID().m_SteamID;
+            }
         }
 
         private void LateUpdate()
@@ -65,6 +79,8 @@ namespace Mirror.FizzySteam
                 Debug.LogError("SteamWorks not initialized. Client could not be started.");
                 return;
             }
+
+            SteamUserID = SteamUser.GetSteamID().m_SteamID;
 
             if (ServerActive())
             {
@@ -113,6 +129,8 @@ namespace Mirror.FizzySteam
                 Debug.LogError("SteamWorks not initialized. Server could not be started.");
                 return;
             }
+
+            SteamUserID = SteamUser.GetSteamID().m_SteamID;
 
             if (ClientActive())
             {
