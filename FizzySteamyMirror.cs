@@ -80,7 +80,7 @@ namespace Mirror.FizzySteam
                 return;
             }
 
-            SteamUserID = SteamUser.GetSteamID().m_SteamID;
+            FetchSteamID();
 
             if (ServerActive())
             {
@@ -130,7 +130,7 @@ namespace Mirror.FizzySteam
                 return;
             }
 
-            SteamUserID = SteamUser.GetSteamID().m_SteamID;
+            FetchSteamID();
 
             if (ClientActive())
             {
