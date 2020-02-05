@@ -29,19 +29,20 @@ namespace Mirror.FizzySteam
 
         private void Awake()
         {
-            if (File.Exists("steam_appid.txt"))
+            const string fileName = "steam_appid.txt";
+            if (File.Exists(fileName))
             {
-                string content = File.ReadAllText("steam_appid.txt");
+                string content = File.ReadAllText(fileName);
                 if (content != SteamAppID)
                 {
-                    File.WriteAllText("steam_appid.txt", SteamAppID.ToString());
-                    Debug.Log($"Updating steam_appid.txt. Previous: {content}, new SteamAppID {SteamAppID}");
+                    File.WriteAllText(fileName, SteamAppID.ToString());
+                    Debug.Log($"Updating {fileName}. Previous: {content}, new SteamAppID {SteamAppID}");
                 }
             }
             else
             {
-                File.WriteAllText("steam_appid.txt", SteamAppID.ToString());
-                Debug.Log($"New steam_appid.txt written with SteamAppID {SteamAppID}");
+                File.WriteAllText(fileName, SteamAppID.ToString());
+                Debug.Log($"New {fileName} written with SteamAppID {SteamAppID}");
             }
 
             Debug.Assert(Channels != null && Channels.Length > 0, "No channel configured for FizzySteamMirror.");
