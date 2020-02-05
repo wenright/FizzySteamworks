@@ -7,7 +7,7 @@ Mirror **[docs](https://mirror-networking.com/docs/Transports/Fizzy.html)** and 
 FizzySteamyMirror brings together **[Steam](https://store.steampowered.com)** and **[Mirror](https://github.com/vis2k/Mirror)** utilising Async of a Steam P2P network transport layer for **Mirror**.
 
 ## Dependencies
-If you want an easy import, skip the steps bellow & download the latest **[unitypackage](https://github.com/Chykary/FizzySteamyMirror/releases)**, **it has SteamWorks.Net already included**.
+If you want an easy import, skip the steps below & download the latest **[unitypackage](https://github.com/Chykary/FizzySteamyMirror/releases)**, **it has SteamWorks.Net already included**.
 
 **Note: If you already have SteamWorks.Net in your project, you might need to delete either your import or the one included in the FizzySteamyMirror [unitypackage](https://github.com/Chykary/FizzySteamyMirror/releases).**
 
@@ -29,10 +29,8 @@ If you know a better way around this please make a [Issue ticket.](https://githu
 To be able to have your game working you need to make sure you have Steam running in the background. **SteamManager will print a Debug Message if it initializes correctly.**
 
 ## Client
-Before sending your game to your buddy make sure you have your **steamID64** ready. To find your **steamID64** goto **[Steamid.io](https://steamid.io/lookup)** and enter your steam profile URL.
-
 1. Send the game to your buddy.
-2. Your buddy needs your **steamID64** to be able to connect.
+2. Your buddy needs your **steamID64** to be able to connect. The transport shows your Steam User ID after you have started a server.
 3. Place the **steamID64** into **"localhost"** then click **"Lan Client"**
 5. Then they will be connected to you.
 
