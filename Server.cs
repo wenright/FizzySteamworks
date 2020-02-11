@@ -113,10 +113,7 @@ namespace Mirror.FizzySteam
             }
         }
 
-        public void Shutdown()
-        {
-            Dispose();
-        }
+        public void Shutdown() => Dispose();        
 
         public bool SendAll(List<int> connectionIds, byte[] data, int channelId)
         {

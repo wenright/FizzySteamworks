@@ -31,7 +31,7 @@ namespace Mirror.FizzySteam
         protected Common(FizzySteamyMirror transport)
         {
             Debug.Assert(transport.Channels.Length < 100, "FizzySteamyMirror does not support more than 99 channels.");
-            this.channels = transport.Channels;
+            channels = transport.Channels;
 
             callback_OnNewConnection = Callback<P2PSessionRequest_t>.Create(OnNewConnection);
             callback_OnConnectFail = Callback<P2PSessionConnectFail_t>.Create(OnConnectFail);

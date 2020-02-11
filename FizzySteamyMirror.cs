@@ -54,14 +54,6 @@ namespace Mirror.FizzySteam
             Invoke(nameof(FetchSteamID), 1f);
         }
 
-        private void FetchSteamID()
-        {
-            if (SteamManager.Initialized)
-            {
-                SteamUserID = SteamUser.GetSteamID().m_SteamID;
-            }
-        }
-
         private void LateUpdate()
         {
             if (activeNode != null)
@@ -186,10 +178,7 @@ namespace Mirror.FizzySteam
 
         public override int GetMaxPacketSize(int channelId)
         {
-            channelId = Math.Min(channelId, Channels.Length - 1);
-
-            EP2PSend sendMethod = Channels[channelId];
-            switch (sendMethod)
+            switch (Channels[channelId])
             {
                 case EP2PSend.k_EP2PSendUnreliable:
                 case EP2PSend.k_EP2PSendUnreliableNoDelay:
@@ -211,6 +200,14 @@ namespace Mirror.FizzySteam
             catch
             {
                 return false;
+            }
+        }
+
+        private void FetchSteamID()
+        {
+            if (SteamManager.Initialized)
+            {
+                SteamUserID = SteamUser.GetSteamID().m_SteamID;
             }
         }
 
