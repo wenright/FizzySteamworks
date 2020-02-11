@@ -54,13 +54,7 @@ namespace Mirror.FizzySteam
             Invoke(nameof(FetchSteamID), 1f);
         }
 
-        private void LateUpdate()
-        {
-            if (activeNode != null)
-            {
-                activeNode.ReceiveData();
-            }
-        }
+        private void LateUpdate() => activeNode?.ReceiveData(); 
 
         public override bool ClientConnected() => ClientActive() && client.Connected;
         public override void ClientConnect(string address)
