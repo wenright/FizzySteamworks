@@ -49,10 +49,11 @@ namespace Mirror.FizzySteam
                 case InternalMessages.CONNECT:
                     if (steamToMirrorIds.Count >= maxConnections)
                     {
-                        SendInternal(clientSteamID, disconnectMsgBuffer);
+                        SendInternal(clientSteamID, InternalMessages.DISCONNECT);
                         return;
                     }
-                    SendInternal(clientSteamID, acceptConnectMsgBuffer);
+
+                    SendInternal(clientSteamID, InternalMessages.ACCEPT_CONNECT);
 
                     int connectionId = nextConnectionID++;
                     steamToMirrorIds.Add(clientSteamID, connectionId);
@@ -101,7 +102,7 @@ namespace Mirror.FizzySteam
                 CSteamID steamID = steamToMirrorIds[connectionId];
                 steamToMirrorIds.Remove(connectionId);
 
-                SendInternal(steamID, disconnectMsgBuffer);
+                SendInternal(steamID, InternalMessages.DISCONNECT);
                 transport.StartCoroutine(WaitDisconnect(steamID));
 
                 return true;

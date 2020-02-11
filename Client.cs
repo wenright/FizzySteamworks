@@ -58,8 +58,7 @@ namespace Mirror.FizzySteam
                 OnConnected += SetConnectedComplete;
                 CloseP2PSessionWithUser(hostSteamID);
 
-                //Send a connect message to the steam client - this requests a connection with them
-                SendInternal(hostSteamID, connectMsgBuffer);
+                SendInternal(hostSteamID, InternalMessages.CONNECT);
 
                 Task connectedCompleteTask = connectedComplete.Task;
 
@@ -83,7 +82,7 @@ namespace Mirror.FizzySteam
 
         public void Disconnect()
         {
-            SendInternal(hostSteamID, disconnectMsgBuffer);
+            SendInternal(hostSteamID, InternalMessages.DISCONNECT);
             Dispose();
             cancelToken.Cancel();
 

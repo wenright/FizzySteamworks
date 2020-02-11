@@ -59,7 +59,6 @@ namespace Mirror.FizzySteam
             if (activeNode != null)
             {
                 activeNode.ReceiveData();
-                activeNode.ReceiveInternal();
             }
         }
 
