@@ -28,6 +28,8 @@ namespace Mirror.FizzySteam
 
             callback_OnNewConnection = Callback<P2PSessionRequest_t>.Create(OnNewConnection);
             callback_OnConnectFail = Callback<P2PSessionConnectFail_t>.Create(OnConnectFail);
+
+            this.transport = transport;
         }
 
         protected IEnumerator WaitDisconnect(CSteamID steamID)
