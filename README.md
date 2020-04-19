@@ -1,4 +1,4 @@
-# FizzySteamyMirror
+# FizzySteamworks
 
 This is a community maintained repo forked from **[RayStorm](https://github.com/Raystorms/FizzySteamyMirror)**. 
 
