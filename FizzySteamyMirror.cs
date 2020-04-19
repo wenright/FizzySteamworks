@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Mirror.FizzySteam
 {
     [RequireComponent(typeof(SteamManager))]
-    [HelpURL("https://github.com/Chykary/FizzySteamyMirror")]
+    [HelpURL("https://github.com/Chykary/FizzySteamworks")]
     public class FizzySteamyMirror : Transport
     {
         private const string STEAM_SCHEME = "steam";
