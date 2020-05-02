@@ -29,10 +29,10 @@ namespace Mirror.FizzySteam
         {
             Client c = new Client(transport);
 
-            c.OnConnected += () => transport.OnClientConnected?.Invoke();
-            c.OnDisconnected += () => transport.OnClientDisconnected?.Invoke();
-            c.OnReceivedData += (data, channel) => transport.OnClientDataReceived?.Invoke(new ArraySegment<byte>(data), channel);
-            c.OnReceivedError += (exception) => transport.OnClientError?.Invoke(exception);
+            c.OnConnected += () => transport.OnClientConnected.Invoke();
+            c.OnDisconnected += () => transport.OnClientDisconnected.Invoke();
+            c.OnReceivedData += (data, channel) => transport.OnClientDataReceived.Invoke(new ArraySegment<byte>(data), channel);
+            c.OnReceivedError += (exception) => transport.OnClientError.Invoke(exception);
 
             if (SteamManager.Initialized)
             {
@@ -72,11 +72,11 @@ namespace Mirror.FizzySteam
             }
             catch (FormatException)
             {
-                OnReceivedError?.Invoke(new Exception("ERROR passing steam ID address"));
+                OnReceivedError.Invoke(new Exception("ERROR passing steam ID address"));
             }
             catch (Exception ex)
             {
-                OnReceivedError?.Invoke(ex);
+                OnReceivedError.Invoke(ex);
             }
         }
 
@@ -99,7 +99,7 @@ namespace Mirror.FizzySteam
                 return;
             }
 
-            OnReceivedData?.Invoke(data, channel);
+            OnReceivedData.Invoke(data, channel);
         }
 
         protected override void OnNewConnection(P2PSessionRequest_t result)
@@ -120,13 +120,13 @@ namespace Mirror.FizzySteam
             {
                 case InternalMessages.ACCEPT_CONNECT:
                     Connected = true;
+                    OnConnected.Invoke();
                     Debug.Log("Connection established.");
-                    OnConnected?.Invoke();
                     break;
                 case InternalMessages.DISCONNECT:
                     Connected = false;
                     Debug.Log("Disconnected.");
-                    OnDisconnected?.Invoke();
+                    OnDisconnected.Invoke();
                     break;
                 default:
                     Debug.Log("Received unknown message type");
@@ -134,7 +134,8 @@ namespace Mirror.FizzySteam
             }
         }
 
-
         public bool Send(byte[] data, int channelId) => Send(hostSteamID, data, channelId);
+
+        protected override void OnConnectionFailed(CSteamID remoteId) => OnDisconnected.Invoke();
     }
 }
