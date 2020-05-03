@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Apple.TV;
 
 namespace Mirror.FizzySteam
 {
@@ -17,7 +18,7 @@ namespace Mirror.FizzySteam
         private int nextConnectionID;
 
         public static Server CreateServer(FizzySteamyMirror transport, int maxConnections)
-        {            
+        {
             Server s = new Server(transport, maxConnections);
 
             s.OnConnected += (id) => transport.OnServerConnected.Invoke(id);
@@ -114,7 +115,7 @@ namespace Mirror.FizzySteam
             }
         }
 
-        public void Shutdown() => Dispose();        
+        public void Shutdown() => Dispose();
 
         public bool SendAll(List<int> connectionIds, byte[] data, int channelId)
         {
@@ -149,6 +150,10 @@ namespace Mirror.FizzySteam
             }
         }
 
-        protected override void OnConnectionFailed(CSteamID remoteId) => OnDisconnected.Invoke(steamToMirrorIds[remoteId]);
+        protected override void OnConnectionFailed(CSteamID remoteId)
+        {
+            int connId = steamToMirrorIds.Contains(remoteId) ? steamToMirrorIds[remoteId] : nextConnectionID++;
+            OnDisconnected.Invoke(steamToMirrorIds[remoteId]);
+        }
     }
 }
