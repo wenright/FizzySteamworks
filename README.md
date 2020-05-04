@@ -1,6 +1,6 @@
 # FizzySteamworks
 
-This is a community maintained repo forked from **[RayStorm](https://github.com/Raystorms/FizzySteamworks)**. 
+This is a community maintained repo forked from **[RayStorm](https://github.com/Raystorms/FizzySteamyMirror)**. 
 
 Mirror **[docs](https://mirror-networking.com/docs/Transports/Fizzy.html)** and the official community **[Discord](https://discord.gg/N9QVxbM)**.
 
