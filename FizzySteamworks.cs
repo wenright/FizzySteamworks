@@ -7,8 +7,8 @@ using UnityEngine;
 namespace Mirror.FizzySteam
 {
     [RequireComponent(typeof(SteamManager))]
-    [HelpURL("https://github.com/Chykary/FizzySteamyMirror")]
-    public class FizzySteamyMirror : Transport
+    [HelpURL("https://github.com/Chykary/FizzySteamworks")]
+    public class FizzySteamworks : Transport
     {
         private const string STEAM_SCHEME = "steam";
 
@@ -49,27 +49,12 @@ namespace Mirror.FizzySteam
                 Debug.Log($"New {fileName} written with SteamAppID {SteamAppID}");
             }
 
-            Debug.Assert(Channels != null && Channels.Length > 0, "No channel configured for FizzySteamMirror.");
+            Debug.Assert(Channels != null && Channels.Length > 0, "No channel configured for FizzySteamworks.");
 
             Invoke(nameof(FetchSteamID), 1f);
         }
 
-        private void FetchSteamID()
-        {
-            if (SteamManager.Initialized)
-            {
-                SteamUserID = SteamUser.GetSteamID().m_SteamID;
-            }
-        }
-
-        private void LateUpdate()
-        {
-            if (activeNode != null)
-            {
-                activeNode.ReceiveData();
-                activeNode.ReceiveInternal();
-            }
-        }
+        private void LateUpdate() => activeNode?.ReceiveData(); 
 
         public override bool ClientConnected() => ClientActive() && client.Connected;
         public override void ClientConnect(string address)
@@ -186,10 +171,7 @@ namespace Mirror.FizzySteam
 
         public override int GetMaxPacketSize(int channelId)
         {
-            channelId = Math.Min(channelId, Channels.Length - 1);
-
-            EP2PSend sendMethod = Channels[channelId];
-            switch (sendMethod)
+            switch (Channels[channelId])
             {
                 case EP2PSend.k_EP2PSendUnreliable:
                 case EP2PSend.k_EP2PSendUnreliableNoDelay:
@@ -211,6 +193,14 @@ namespace Mirror.FizzySteam
             catch
             {
                 return false;
+            }
+        }
+
+        private void FetchSteamID()
+        {
+            if (SteamManager.Initialized)
+            {
+                SteamUserID = SteamUser.GetSteamID().m_SteamID;
             }
         }
 
