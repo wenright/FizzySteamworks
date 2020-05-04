@@ -1,5 +1,4 @@
 # FizzySteamworks
-Project Website: https://github.com/Chykary/FizzySteamworks
 
 This is a community maintained repo forked from **[RayStorm](https://github.com/Raystorms/FizzySteamworks)**. 
 
@@ -32,7 +31,7 @@ To be able to have your game working you need to make sure you have Steam runnin
 ## Client
 Before sending your game to your buddy make sure you have your **steamID64** ready. To find your **steamID64** the transport prints the hosts **steamID64** in the console when the server has started.
 
-1. Send the game to your buddy.
+1. Send the game to your buddy. The transport shows your Steam User ID after you have started a server.
 2. Your buddy needs your **steamID64** to be able to connect.
 3. Place the **steamID64** into **"localhost"** then click **"Lan Client"**
 5. Then they will be connected to you.
