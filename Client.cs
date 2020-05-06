@@ -9,7 +9,8 @@ namespace Mirror.FizzySteam
     public class Client : Common
     {
         public bool Connected { get; private set; }
-        private event Action<Exception> OnReceivedError;
+        public bool Error { get; private set; }
+
         private event Action<byte[], int> OnReceivedData;
         private event Action OnConnected;
         private event Action OnDisconnected;
@@ -32,7 +33,6 @@ namespace Mirror.FizzySteam
             c.OnConnected += () => transport.OnClientConnected.Invoke();
             c.OnDisconnected += () => transport.OnClientDisconnected.Invoke();
             c.OnReceivedData += (data, channel) => transport.OnClientDataReceived.Invoke(new ArraySegment<byte>(data), channel);
-            c.OnReceivedError += (exception) => transport.OnClientError.Invoke(exception);
 
             if (SteamManager.Initialized)
             {
@@ -41,6 +41,7 @@ namespace Mirror.FizzySteam
             else
             {
                 Debug.LogError("SteamWorks not initialized");
+                c.OnConnectionFailed(CSteamID.Nil);
             }
 
             return c;
@@ -52,7 +53,7 @@ namespace Mirror.FizzySteam
 
             try
             {
-                hostSteamID = new CSteamID(Convert.ToUInt64(host));
+                hostSteamID = new CSteamID(UInt64.Parse(host));
                 connectedComplete = new TaskCompletionSource<Task>();
 
                 OnConnected += SetConnectedComplete;
@@ -73,12 +74,24 @@ namespace Mirror.FizzySteam
             }
             catch (FormatException)
             {
-                OnReceivedError.Invoke(new Exception("ERROR passing steam ID address"));
+                Debug.LogError($"Connection string was not in the right format. Did you enter a SteamId?");
+                Error = true;
+                OnConnectionFailed(hostSteamID);
             }
             catch (Exception ex)
             {
-                OnReceivedError.Invoke(ex);
+                Debug.LogError(ex.Message);
+                Error = true;
+                OnConnectionFailed(hostSteamID);
             }
+            finally
+            {
+                if (Error)
+                {
+                    OnConnectionFailed(CSteamID.Nil);
+                }
+            }
+
         }
 
         public void Disconnect()

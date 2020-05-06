@@ -27,7 +27,7 @@ namespace Mirror.FizzySteam
 
             if (!SteamManager.Initialized)
             {
-                Debug.LogError("SteamWorks not initialized");
+                Debug.LogError("SteamWorks not initialized.");
             }
 
             return s;

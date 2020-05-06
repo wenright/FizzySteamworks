@@ -62,6 +62,7 @@ namespace Mirror.FizzySteam
             if (!SteamManager.Initialized)
             {
                 Debug.LogError("SteamWorks not initialized. Client could not be started.");
+                OnClientDisconnected.Invoke();
                 return;
             }
 
@@ -73,7 +74,7 @@ namespace Mirror.FizzySteam
                 return;
             }
 
-            if (!ClientActive())
+            if (!ClientActive() || client.Error)
             {
                 Debug.Log($"Starting client, target address {address}.");
 
