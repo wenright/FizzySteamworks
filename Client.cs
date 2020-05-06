@@ -64,8 +64,9 @@ namespace Mirror.FizzySteam
 
                 if (await Task.WhenAny(connectedCompleteTask, Task.Delay(ConnectionTimeout, cancelToken.Token)) != connectedCompleteTask)
                 {
+                    Debug.LogError($"Connection to {host} timed out.");
                     OnConnected -= SetConnectedComplete;
-                    throw new Exception("Timed out while connecting");
+                    OnConnectionFailed(hostSteamID);
                 }
 
                 OnConnected -= SetConnectedComplete;

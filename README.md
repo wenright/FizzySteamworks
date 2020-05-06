@@ -37,4 +37,4 @@ Before sending your game to your buddy make sure you have your **steamID64** rea
 5. Then they will be connected to you.
 
 ## Testing your game locally
-You cant connect to yourself locally while using **FizzySteamworks** since it's using steams P2P. If you want to test your game locally you'll have to use **"Telepathy Transport"** instead of **"Fizzy Steamy Mirror"**.
+You cant connect to yourself locally while using **FizzySteamworks** since it's using steams P2P. If you want to test your game locally you'll have to use **"Telepathy Transport"** instead of **"FizzySteamworks"**.
