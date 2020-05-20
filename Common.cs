@@ -74,7 +74,7 @@ namespace Mirror.FizzySteam
             }
         }
 
-        protected void SendInternal(CSteamID target, InternalMessages type) => SteamNetworking.SendP2PPacket(target, new byte[] { (byte) type }, 1, EP2PSend.k_EP2PSendReliable, internal_ch);
+        protected void SendInternal(CSteamID target, InternalMessages type) => SteamNetworking.SendP2PPacket(target, new byte[] { (byte)type }, 1, EP2PSend.k_EP2PSendReliable, internal_ch);
         protected bool Send(CSteamID host, byte[] msgBuffer, int channel)
         {
             return SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, channels[channel], channel);
@@ -98,6 +98,19 @@ namespace Mirror.FizzySteam
         {
             try
             {
+                while (Receive(out CSteamID clientSteamID, out byte[] internalMessage, internal_ch))
+                {
+                    if (internalMessage.Length == 1)
+                    {
+                        OnReceiveInternalData((InternalMessages)internalMessage[0], clientSteamID);
+                        return; // Wait one frame
+                    }
+                    else
+                    {
+                        Debug.Log("Incorrect package length on internal channel.");
+                    }
+                }
+
                 for (int chNum = 0; chNum < channels.Length; chNum++)
                 {
                     while (Receive(out CSteamID clientSteamID, out byte[] receiveBuffer, chNum))
@@ -106,17 +119,6 @@ namespace Mirror.FizzySteam
                     }
                 }
 
-                while (Receive(out CSteamID clientSteamID, out byte[] internalMessage, internal_ch))
-                {
-                    if (internalMessage.Length == 1)
-                    {
-                        OnReceiveInternalData((InternalMessages)internalMessage[0], clientSteamID);
-                    }
-                    else
-                    {
-                        Debug.Log("Incorrect package length on internal channel.");
-                    }
-                }
             }
             catch (Exception e)
             {
