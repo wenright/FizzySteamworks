@@ -32,12 +32,6 @@ namespace Mirror.FizzySteam
             this.transport = transport;
         }
 
-        protected IEnumerator WaitDisconnect(CSteamID steamID)
-        {
-            yield return new WaitForSeconds(0.1f);
-            CloseP2PSessionWithUser(steamID);
-        }
-
         protected void Dispose()
         {
             if (callback_OnNewConnection != null)
@@ -58,6 +52,7 @@ namespace Mirror.FizzySteam
         private void OnConnectFail(P2PSessionConnectFail_t result)
         {
             OnConnectionFailed(result.m_steamIDRemote);
+            CloseP2PSessionWithUser(result.m_steamIDRemote);
 
             switch (result.m_eP2PSessionError)
             {
@@ -93,6 +88,13 @@ namespace Mirror.FizzySteam
         }
 
         protected void CloseP2PSessionWithUser(CSteamID clientSteamID) => SteamNetworking.CloseP2PSessionWithUser(clientSteamID);
+
+        protected void WaitForClose(CSteamID cSteamID) => transport.StartCoroutine(DelayedClose(cSteamID));
+        private IEnumerator DelayedClose(CSteamID cSteamID)
+        {
+            yield return null;
+            CloseP2PSessionWithUser(cSteamID);
+        }
 
         public void ReceiveData()
         {

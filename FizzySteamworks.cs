@@ -102,9 +102,10 @@ namespace Mirror.FizzySteam
             Array.Copy(segment.Array, segment.Offset, data, 0, segment.Count);
             return client.Send(data, channelId);
         }
+
         public override void ClientDisconnect()
         {
-            if (ClientActive())
+             if (ClientActive())
             {
                 Shutdown();
             }

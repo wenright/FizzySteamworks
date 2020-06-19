@@ -64,8 +64,8 @@ namespace Mirror.FizzySteam
                     if (steamToMirrorIds.Contains(clientSteamID))
                     {
                         OnDisconnected.Invoke(steamToMirrorIds[clientSteamID]);
-                        steamToMirrorIds.Remove(clientSteamID);
                         CloseP2PSessionWithUser(clientSteamID);
+                        steamToMirrorIds.Remove(clientSteamID);
                         Debug.Log($"Client with SteamID {clientSteamID} disconnected.");
                     }
                     else
@@ -100,10 +100,7 @@ namespace Mirror.FizzySteam
             if (steamToMirrorIds.Contains(connectionId))
             {
                 CSteamID steamID = steamToMirrorIds[connectionId];
-                steamToMirrorIds.Remove(connectionId);
-
                 SendInternal(steamID, InternalMessages.DISCONNECT);
-                transport.StartCoroutine(WaitDisconnect(steamID));
 
                 return true;
             }
@@ -114,7 +111,16 @@ namespace Mirror.FizzySteam
             }
         }
 
-        public void Shutdown() => Dispose();
+        public void Shutdown()
+        {
+            foreach (KeyValuePair<CSteamID, int> client in steamToMirrorIds)
+            {
+                Disconnect(client.Value);
+                WaitForClose(client.Key);
+            }
+
+            Dispose();
+        }
 
         public bool SendAll(List<int> connectionIds, byte[] data, int channelId)
         {
@@ -153,6 +159,8 @@ namespace Mirror.FizzySteam
         {
             int connId = steamToMirrorIds.Contains(remoteId) ? steamToMirrorIds[remoteId] : nextConnectionID++;
             OnDisconnected.Invoke(steamToMirrorIds[remoteId]);
+
+            steamToMirrorIds.Remove(remoteId);
         }
     }
 }
