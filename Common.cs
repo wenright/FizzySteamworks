@@ -100,7 +100,7 @@ namespace Mirror.FizzySteam
         {
             try
             {
-                while (Receive(out CSteamID clientSteamID, out byte[] internalMessage, internal_ch))
+                while (transport.enabled && Receive(out CSteamID clientSteamID, out byte[] internalMessage, internal_ch))
                 {
                     if (internalMessage.Length == 1)
                     {
@@ -115,7 +115,7 @@ namespace Mirror.FizzySteam
 
                 for (int chNum = 0; chNum < channels.Length; chNum++)
                 {
-                    while (Receive(out CSteamID clientSteamID, out byte[] receiveBuffer, chNum))
+                    while (transport.enabled && Receive(out CSteamID clientSteamID, out byte[] receiveBuffer, chNum))
                     {
                         OnReceiveData(receiveBuffer, clientSteamID, chNum);
                     }
