@@ -70,10 +70,8 @@ namespace Mirror.FizzySteam
         }
 
         protected void SendInternal(CSteamID target, InternalMessages type) => SteamNetworking.SendP2PPacket(target, new byte[] { (byte)type }, 1, EP2PSend.k_EP2PSendReliable, internal_ch);
-        protected bool Send(CSteamID host, byte[] msgBuffer, int channel)
-        {
-            return SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, channels[channel], channel);
-        }
+        protected void Send(CSteamID host, byte[] msgBuffer, int channel) => SteamNetworking.SendP2PPacket(host, msgBuffer, (uint)msgBuffer.Length, channels[channel], channel);
+
         private bool Receive(out CSteamID clientSteamID, out byte[] receiveBuffer, int channel)
         {
             if (SteamNetworking.IsP2PPacketAvailable(out uint packetSize, channel))
