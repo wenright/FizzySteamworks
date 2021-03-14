@@ -88,7 +88,18 @@ namespace Mirror.FizzySteam
 
     protected void CloseP2PSessionWithUser(CSteamID clientSteamID) => SteamNetworking.CloseP2PSessionWithUser(clientSteamID);
 
-    protected void WaitForClose(CSteamID cSteamID) => transport.StartCoroutine(DelayedClose(cSteamID));
+    protected void WaitForClose(CSteamID cSteamID)
+    {
+      if (transport.enabled)
+      {
+        transport.StartCoroutine(DelayedClose(cSteamID));
+      }
+      else
+      {
+        CloseP2PSessionWithUser(cSteamID);
+      }
+    }
+
     private IEnumerator DelayedClose(CSteamID cSteamID)
     {
       yield return null;

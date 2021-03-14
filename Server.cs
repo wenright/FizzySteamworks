@@ -68,10 +68,6 @@ namespace Mirror.FizzySteam
             steamToMirrorIds.Remove(clientSteamID);
             Debug.Log($"Client with SteamID {clientSteamID} disconnected.");
           }
-          else
-          {
-            OnReceivedError.Invoke(-1, new Exception("ERROR Unknown SteamID while receiving disconnect message."));
-          }
 
           break;
         default:
