@@ -10,8 +10,8 @@ namespace Mirror.FizzySteam
   {
     private const string STEAM_SCHEME = "steam";
 
-    private static Client client;
-    private static Server server;
+    private static IClient client;
+    private static IServer server;
 
     [SerializeField]
     public EP2PSend[] Channels = new EP2PSend[2] { EP2PSend.k_EP2PSendReliable, EP2PSend.k_EP2PSendUnreliableNoDelay };
@@ -89,7 +89,7 @@ namespace Mirror.FizzySteam
         Debug.Log($"Starting client, target address {address}.");
 
         SteamNetworking.AllowP2PPacketRelay(AllowSteamRelay);
-        client = Client.CreateClient(this, address);
+        client = LegacyClient.CreateClient(this, address);
       }
       else
       {
@@ -143,7 +143,7 @@ namespace Mirror.FizzySteam
       {
         Debug.Log("Starting server.");
         SteamNetworking.AllowP2PPacketRelay(AllowSteamRelay);
-        server = Server.CreateServer(this, NetworkManager.singleton.maxConnections);
+        server = LegacyServer.CreateServer(this, NetworkManager.singleton.maxConnections);
       }
       else
       {
