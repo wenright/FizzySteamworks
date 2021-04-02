@@ -98,7 +98,6 @@ namespace Mirror.FizzySteam
           OnConnectionFailed(CSteamID.Nil);
         }
       }
-
     }
 
     public void Disconnect()
@@ -165,5 +164,6 @@ namespace Mirror.FizzySteam
     public void Send(byte[] data, int channelId) => Send(hostSteamID, data, channelId);
 
     protected override void OnConnectionFailed(CSteamID remoteId) => OnDisconnected.Invoke();
+    public void FlushData() { }
   }
 }

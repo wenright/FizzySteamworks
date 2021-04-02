@@ -23,6 +23,9 @@ namespace Mirror.FizzySteam
     [Tooltip("Allow or disallow P2P connections to fall back to being relayed through the Steam servers if a direct connection or NAT-traversal cannot be established.")]
     public bool AllowSteamRelay = true;
 
+    [Tooltip("Use SteamSockets instead of the (deprecated) SteamNetworking. This will always use Relay.")]
+    public bool UseNextGenSteamNetworking = true;
+
     [Header("Info")]
     [Tooltip("This will display your Steam User ID when you start or connect to a server.")]
     public ulong SteamUserID;
@@ -43,6 +46,11 @@ namespace Mirror.FizzySteam
       {
         File.WriteAllText(fileName, SteamAppID.ToString());
         Debug.Log($"New {fileName} written with SteamAppID {SteamAppID}");
+      }
+
+      if(UseNextGenSteamNetworking)
+      {
+        SteamNetworkingUtils.InitRelayNetworkAccess();
       }
 
       Debug.Assert(Channels != null && Channels.Length > 0, "No channel configured for FizzySteamworks.");
@@ -66,6 +74,22 @@ namespace Mirror.FizzySteam
       }
     }
 
+    public override void ClientLateUpdate()
+    {
+      if (enabled)
+      {
+        client?.FlushData();
+      }
+    }
+
+    public override void ServerLateUpdate()
+    {
+      if (enabled)
+      {
+        server?.FlushData();
+      }
+    }
+
     public override bool ClientConnected() => ClientActive() && client.Connected;
     public override void ClientConnect(string address)
     {
@@ -86,10 +110,17 @@ namespace Mirror.FizzySteam
 
       if (!ClientActive() || client.Error)
       {
-        Debug.Log($"Starting client, target address {address}.");
-
-        SteamNetworking.AllowP2PPacketRelay(AllowSteamRelay);
-        client = LegacyClient.CreateClient(this, address);
+        if (UseNextGenSteamNetworking)
+        {
+          Debug.Log($"Starting client [SteamSockets], target address {address}.");
+          client = NextClient.CreateClient(this, address);
+        }
+        else
+        {
+          Debug.Log($"Starting client [DEPRECATED SteamNetworking], target address {address}. Relay enabled: {AllowSteamRelay}");
+          SteamNetworking.AllowP2PPacketRelay(AllowSteamRelay);
+          client = LegacyClient.CreateClient(this, address);
+        }
       }
       else
       {
@@ -141,9 +172,17 @@ namespace Mirror.FizzySteam
 
       if (!ServerActive())
       {
-        Debug.Log("Starting server.");
-        SteamNetworking.AllowP2PPacketRelay(AllowSteamRelay);
-        server = LegacyServer.CreateServer(this, NetworkManager.singleton.maxConnections);
+        if (UseNextGenSteamNetworking)
+        {
+          Debug.Log($"Starting server [SteamSockets].");
+          server = NextServer.CreateServer(this, NetworkManager.singleton.maxConnections);
+        }
+        else
+        {
+          Debug.Log($"Starting server [DEPRECATED SteamNetworking]. Relay enabled: {AllowSteamRelay}");
+          SteamNetworking.AllowP2PPacketRelay(AllowSteamRelay);
+          server = LegacyServer.CreateServer(this, NetworkManager.singleton.maxConnections);
+        }
       }
       else
       {
@@ -168,7 +207,7 @@ namespace Mirror.FizzySteam
       {
         byte[] data = new byte[segment.Count];
         Array.Copy(segment.Array, segment.Offset, data, 0, segment.Count);
-        server.SendAll(connectionId, data, channelId);
+        server.Send(connectionId, data, channelId);
       }
     }
     public override bool ServerDisconnect(int connectionId) => ServerActive() && server.Disconnect(connectionId);

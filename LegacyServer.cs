@@ -95,6 +95,7 @@ namespace Mirror.FizzySteam
       if (steamToMirrorIds.TryGetValue(connectionId, out CSteamID steamID))
       {
         SendInternal(steamID, InternalMessages.DISCONNECT);
+        steamToMirrorIds.Remove(connectionId);
         return true;
       }
       else
@@ -115,7 +116,7 @@ namespace Mirror.FizzySteam
       Dispose();
     }
 
-    public void SendAll(int connectionId, byte[] data, int channelId)
+    public void Send(int connectionId, byte[] data, int channelId)
     {
       if (steamToMirrorIds.TryGetValue(connectionId, out CSteamID steamId))
       {
@@ -126,7 +127,6 @@ namespace Mirror.FizzySteam
         Debug.LogError("Trying to send on unknown connection: " + connectionId);
         OnReceivedError.Invoke(connectionId, new Exception("ERROR Unknown Connection"));
       }
-
     }
 
     public string ServerGetClientAddress(int connectionId)
@@ -150,5 +150,6 @@ namespace Mirror.FizzySteam
 
       steamToMirrorIds.Remove(remoteId);
     }
+    public void FlushData() { }
   }
 }

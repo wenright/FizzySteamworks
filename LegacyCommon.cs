@@ -79,7 +79,6 @@ namespace Mirror.FizzySteam
 
     private bool Receive(out CSteamID clientSteamID, out byte[] receiveBuffer, int channel)
     {
-
       if (SteamNetworking.IsP2PPacketAvailable(out uint packetSize, channel))
       {
         receiveBuffer = new byte[packetSize];
