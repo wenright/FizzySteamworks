@@ -4,7 +4,7 @@ This is a community maintained repo forked from **[RayStorm](https://github.com/
 
 Mirror **[docs](https://mirror-networking.com/docs/Transports/Fizzy.html)** and the official community **[Discord](https://discord.gg/N9QVxbM)**.
 
-FizzySteamworks brings together **[Steam](https://store.steampowered.com)** and **[Mirror](https://github.com/vis2k/Mirror)** utilising Async of a Steam P2P network transport layer for **Mirror**.
+FizzySteamworks brings together **[Steam](https://store.steampowered.com)** and **[Mirror](https://github.com/vis2k/Mirror)** . It supports both the old SteamNetworking and the new SteamSockets.
 
 ## Dependencies
 If you want an easy import, skip the steps below & download the latest **[unitypackage](https://github.com/Chykary/FizzySteamworks/releases)**, **it has SteamWorks.Net already included**.
@@ -17,7 +17,7 @@ Both of these projects need to be installed and working before you can use this 
 
 ## Setting Up
 
-1. Install Mirror **(Requires Mirror 8.0+)** from the Unity asset store **[Download Mirror](https://assetstore.unity.com/packages/tools/network/mirror-129321)**.
+1. Install Mirror **(Requires Mirror 35.0+)** from the Unity asset store **[Download Mirror](https://assetstore.unity.com/packages/tools/network/mirror-129321)**.
 2. Install FizzySteamworks **[unitypackage](https://github.com/Chykary/FizzySteamworks/releases)** from the release section.
 3. In your **"NetworkManager"** object replace **"Telepathy"** script with **"FizzySteamworks"** script.
 4. Enter your Steam App ID in the **"FizzySteamworks"** script.
