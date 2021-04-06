@@ -90,17 +90,22 @@ namespace Mirror.FizzySteam
       {
         if (connToMirrorID.TryGetValue(param.m_hConn, out int connId))
         {
-          OnDisconnected.Invoke(connId);
-          SteamNetworkingSockets.CloseConnection(param.m_hConn, 0, "Graceful disconnect", false);
-          connToMirrorID.Remove(connId);
-          steamIDToMirrorID.Remove(connId);
-          Debug.Log($"Client with SteamID {clientSteamID} disconnected.");
+          InternalDisconnect(connId, param.m_hConn);
         }
       }
       else
       {
         Debug.Log($"Connection {clientSteamID} state changed: {param.m_info.m_eState.ToString()}");
       }
+    }
+
+    private void InternalDisconnect(int connId, HSteamNetConnection socket)
+    {
+      OnDisconnected.Invoke(connId);
+      SteamNetworkingSockets.CloseConnection(socket, 0, "Graceful disconnect", false);
+      connToMirrorID.Remove(connId);
+      steamIDToMirrorID.Remove(connId);
+      Debug.Log($"Client with ConnectionID {connId} disconnected.");
     }
 
     public bool Disconnect(int connectionId)
@@ -154,7 +159,12 @@ namespace Mirror.FizzySteam
       {
         EResult res = SendSocket(conn, data, channelId);
 
-        if(res != EResult.k_EResultOK)
+        if(res == EResult.k_EResultNoConnection || res == EResult.k_EResultInvalidParam)
+        {
+          Debug.Log($"Connection to {connectionId} was lost.");
+          InternalDisconnect(connectionId, conn);
+        }
+        else if(res != EResult.k_EResultOK)
         {
           Debug.LogError($"Could not send: {res.ToString()}");
         }
