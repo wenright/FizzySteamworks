@@ -47,7 +47,10 @@ namespace Mirror.FizzySteam
         File.WriteAllText(fileName, SteamAppID.ToString());
         Debug.Log($"New {fileName} written with SteamAppID {SteamAppID}");
       }
+    }
 
+    private void OnEnable()
+    {
       if(UseNextGenSteamNetworking)
       {
         SteamNetworkingUtils.InitRelayNetworkAccess();
