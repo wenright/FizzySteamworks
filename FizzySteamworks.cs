@@ -51,13 +51,7 @@ namespace Mirror.FizzySteam
 
     private void OnEnable()
     {
-      if(UseNextGenSteamNetworking)
-      {
-        SteamNetworkingUtils.InitRelayNetworkAccess();
-      }
-
       Debug.Assert(Channels != null && Channels.Length > 0, "No channel configured for FizzySteamworks.");
-
       Invoke(nameof(FetchSteamID), 1f);
     }
 
@@ -277,6 +271,11 @@ namespace Mirror.FizzySteam
     {
       if (SteamManager.Initialized)
       {
+        if (UseNextGenSteamNetworking)
+        {
+          SteamNetworkingUtils.InitRelayNetworkAccess();
+        }
+
         SteamUserID = SteamUser.GetSteamID().m_SteamID;
       }
     }
