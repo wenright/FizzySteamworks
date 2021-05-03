@@ -133,6 +133,7 @@ namespace Mirror.FizzySteam
       }
       else if (param.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer)
       {
+        Debug.Log("Connection was closed by peer.");
         Disconnect();
       }
       else
