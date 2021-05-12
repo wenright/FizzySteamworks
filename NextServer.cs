@@ -109,7 +109,7 @@ namespace Mirror.FizzySteam
       Debug.Log($"Client with ConnectionID {connId} disconnected.");
     }
 
-    public bool Disconnect(int connectionId)
+    public void Disconnect(int connectionId)
     {
       if (connToMirrorID.TryGetValue(connectionId, out HSteamNetConnection conn))
       {
@@ -118,12 +118,10 @@ namespace Mirror.FizzySteam
         steamIDToMirrorID.Remove(connectionId);
         connToMirrorID.Remove(connectionId);
         OnDisconnected(connectionId);
-        return true;
       }
       else
       {
         Debug.LogWarning("Trying to disconnect unknown connection id: " + connectionId);
-        return false;
       }
     }
 
