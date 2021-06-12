@@ -87,7 +87,7 @@ namespace Mirror.FizzySteam
         OnConnected.Invoke(connectionId);
         Debug.Log($"Client with SteamID {clientSteamID} connected. Assigning connection id {connectionId}");
       }
-      else if (param.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer)
+      else if (param.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer || param.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
       {
         if (connToMirrorID.TryGetValue(param.m_hConn, out int connId))
         {
