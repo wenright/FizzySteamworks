@@ -1,4 +1,3 @@
-#if !DISABLESTEAMWORKS
 using Steamworks;
 using System;
 using System.Linq;
@@ -204,4 +203,3 @@ namespace Mirror.FizzySteam
     }
   }
 }
-#endif // !DISABLESTEAMWORKS
