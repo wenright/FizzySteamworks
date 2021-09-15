@@ -7,34 +7,35 @@ Mirror **[docs](https://mirror-networking.com/docs/Transports/Fizzy.html)** and 
 FizzySteamworks brings together **[Steam](https://store.steampowered.com)** and **[Mirror](https://github.com/vis2k/Mirror)** . It supports both the old SteamNetworking and the new SteamSockets.
 
 ## Dependencies
-If you want an easy import, skip the steps below & download the latest **[unitypackage](https://github.com/Chykary/FizzySteamworks/releases)**, **it has SteamWorks.Net already included**.
+If you are using Heathen's Steamworks Foundation or Steamworks Complete you do not need to install Steamworks.NET as they already have it included.
 
-**Note: If you already have SteamWorks.Net in your project, you might need to delete either your import or the one included in the FizzySteamworks [unitypackage](https://github.com/Chykary/FizzySteamworks/releases).**
+You must have Mirror installed and working before you can use this transport.
+**[Mirror](https://github.com/vis2k/Mirror)** FizzySteamworks is also obviously dependant on Mirror which is a streamline, bug fixed, maintained version of UNET for Unity.
 
-Both of these projects need to be installed and working before you can use this transport.
-1. **[SteamWorks.NET](https://github.com/rlabrecque/Steamworks.NET)** FizzySteamworks relies on Steamworks.NET to communicate with the **[Steamworks API](https://partner.steamgames.com/doc/sdk)**. **Requires .Net 4.x**  
-2. **[Mirror](https://github.com/vis2k/Mirror)** FizzySteamworks is also obviously dependant on Mirror which is a streamline, bug fixed, maintained version of UNET for Unity.
+You must also have installed and working either
+**[Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET)** FizzySteamworks relies on Steamworks.NET to communicate with the **[Steamworks API](https://partner.steamgames.com/doc/sdk)**. **Requires .Net 4.x**  
+
+or
+
+**[Heathen's free Steamworks Foundation](https://assetstore.unity.com/packages/tools/integration/steamworks-v2-foundation-186949) or [Heathen's premimum Steamworks Complete](https://assetstore.unity.com/packages/tools/integration/steamworks-v2-complete-190316)**
+**NOTE: Heathen's Steamworks is built on and includes Steamworks.NET so if you already have that installed you must fully remove it first**
 
 ## Setting Up
 
 1. Install Mirror **(Requires Mirror 35.0+)** from the Unity asset store **[Download Mirror](https://assetstore.unity.com/packages/tools/network/mirror-129321)**.
 2. Install FizzySteamworks **[unitypackage](https://github.com/Chykary/FizzySteamworks/releases)** from the release section.
 3. In your **"NetworkManager"** object replace **"Telepathy"** script with **"FizzySteamworks"** script.
-4. Enter your Steam App ID in the **"FizzySteamworks"** script.
-
-**Note: The  default 480(Spacewar) appid is a very grey area, technically, it's not allowed but they don't really do anything about it. When you have your own appid from steam then replace the 480 with your own game appid.
-If you know a better way around this please make a [Issue ticket.](https://github.com/Chykary/FizzySteamworks/issues)**
 
 ## Host
-To be able to have your game working you need to make sure you have Steam running in the background. **SteamManager will print a Debug Message if it initializes correctly.**
+To be able to have your game working you need to make sure you have Steam running in the background and that the Steam API initalized correctly. You can then call StartHost and use Mirror as you normally would.
 
 ## Client
-Before sending your game to your buddy make sure you have your **steamID64** ready. To find your **steamID64** the transport prints the hosts **steamID64** in the console when the server has started.
+To connect a client to a host or server you need the CSteamID of the target you wish to connect to this is used in place of IP/Port. If your creating a Peer to Peer architecture then you would use the CSteamID of the host, this is Steam user ID as a ulong value. If you are creating a Client Server architecture then you will be using the CSteamID issued to the Steam Game Server when it logs the Steam API on. This is an advanced use case supported by Heathen's Steamworks but requires additional custom code if your using Steamworks.NET directly.
 
-1. Send the game to your buddy. The transport shows your Steam User ID after you have started a server.
-2. Your buddy needs your **steamID64** to be able to connect.
+1. Send the game to your buddy.
+2. Your buddy needs the host or game server **steamID64** to be able to connect.
 3. Place the **steamID64** into **"localhost"** then click **"Client"**
-5. Then they will be connected to you.
+5. Then they will be connected to your server be that your machine as a P2P connection or yoru Steam Game Server as a Client Server connection.
 
 ## Testing your game locally
-You cant connect to yourself locally while using **FizzySteamworks** since it's using steams P2P. If you want to test your game locally you'll have to use **"Telepathy Transport"** instead of **"FizzySteamworks"**.
+You cant connect to yourself locally while using **FizzySteamworks** since it's using Steams Networking which runs over Steam Client and addresses its connection based on the unique CSteamID of each actor. If you want to test your game locally you'll have to use **"Telepathy Transport"** instead of **"FizzySteamworks"**.
