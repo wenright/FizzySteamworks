@@ -4,7 +4,9 @@ This is a community maintained repo forked from **[RayStorm](https://github.com/
 
 Mirror **[docs](https://mirror-networking.com/docs/Transports/Fizzy.html)** and the official community **[Discord](https://discord.gg/N9QVxbM)**.
 
-FizzySteamworks brings together **[Steam](https://store.steampowered.com)** and **[Mirror](https://github.com/vis2k/Mirror)** . It supports both the old SteamNetworking and the new SteamSockets. **NOTE Steamworks.NET has a known issue preventing the use of the new SteamSockets and can only be used if you have implamented Steamworks.NET change set 424 or are using Heathen's Steamworks; if either case is true you will need to uncomment code located in the NextServer.cs**
+FizzySteamworks brings together **[Steam](https://store.steampowered.com)** and **[Mirror](https://github.com/vis2k/Mirror)** . It supports both the old SteamNetworking and the new SteamSockets. 
+
+**NOTE Steamworks.NET has a known issue preventing the use of the new SteamSockets and can only be used if you have implamented Steamworks.NET change set 424 or are using Heathen's Steamworks; if either case is true you will need to uncomment code located in the NextCommon.cs in the ProcessMessage method for the Steam Sockets integration to work**
 
 ## Dependencies
 If you are using Heathen's Steamworks Foundation or Steamworks Complete you do not need to install Steamworks.NET as they already have it included.
