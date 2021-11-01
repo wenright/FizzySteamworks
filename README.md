@@ -2,7 +2,7 @@
 
 This is a community maintained repo forked from **[RayStorm](https://github.com/Raystorms/FizzySteamyMirror)**. 
 
-Mirror **[docs](https://mirror-networking.com/docs/Transports/Fizzy.html)** and the official community **[Discord](https://discord.gg/N9QVxbM)**.
+Mirror **[docs](https://mirror-networking.gitbook.io/docs/transports/fizzysteamworks-transport)** and the official community **[Discord](https://discord.gg/N9QVxbM)**.
 
 FizzySteamworks brings together **[Steam](https://store.steampowered.com)** and **[Mirror](https://github.com/vis2k/Mirror)** . It supports both the old SteamNetworking and the new SteamSockets. 
 
