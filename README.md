@@ -7,8 +7,6 @@ Mirror **[docs](https://mirror-networking.com/docs/Transports/Fizzy.html)** and 
 FizzySteamworks brings together **[Steam](https://store.steampowered.com)** and **[Mirror](https://github.com/vis2k/Mirror)** . It supports both the old SteamNetworking and the new SteamSockets. 
 
 ## Dependencies
-If you are using Heathen's Steamworks Foundation or Steamworks Complete you do not need to install Steamworks.NET as they already have it included.
-
 You must have Mirror installed and working before you can use this transport.
 **[Mirror](https://github.com/vis2k/Mirror)** FizzySteamworks is also obviously dependant on Mirror which is a streamline, bug fixed, maintained version of UNET for Unity.
 
