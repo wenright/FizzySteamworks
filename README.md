@@ -2,11 +2,9 @@
 
 This is a community maintained repo forked from **[RayStorm](https://github.com/Raystorms/FizzySteamyMirror)**. 
 
-Mirror **[docs](https://mirror-networking.gitbook.io/docs/transports/fizzysteamworks-transport)** and the official community **[Discord](https://discord.gg/N9QVxbM)**.
+Mirror **[docs](https://mirror-networking.com/docs/Transports/Fizzy.html)** and the official community **[Discord](https://discord.gg/N9QVxbM)**.
 
 FizzySteamworks brings together **[Steam](https://store.steampowered.com)** and **[Mirror](https://github.com/vis2k/Mirror)** . It supports both the old SteamNetworking and the new SteamSockets. 
-
-**NOTE Steamworks.NET has a known issue preventing the use of the new SteamSockets and can only be used if you have implamented Steamworks.NET change set 424 or are using Heathen's Steamworks; if either case is true you will need to uncomment code located in the NextCommon.cs in the ProcessMessage method for the Steam Sockets integration to work**
 
 ## Dependencies
 If you are using Heathen's Steamworks Foundation or Steamworks Complete you do not need to install Steamworks.NET as they already have it included.
@@ -14,19 +12,35 @@ If you are using Heathen's Steamworks Foundation or Steamworks Complete you do n
 You must have Mirror installed and working before you can use this transport.
 **[Mirror](https://github.com/vis2k/Mirror)** FizzySteamworks is also obviously dependant on Mirror which is a streamline, bug fixed, maintained version of UNET for Unity.
 
-You must also have installed and working either
+You must have Steamworks.NET installed and working before you can use this transport.
 **[Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET)** FizzySteamworks relies on Steamworks.NET to communicate with the **[Steamworks API](https://partner.steamgames.com/doc/sdk)**. **Requires .Net 4.x**  
 
-or
+## Installation
+### Unity Package Manager
 
-**[Heathen's free Steamworks Foundation](https://assetstore.unity.com/packages/tools/integration/steamworks-v2-foundation-186949) or [Heathen's premimum Steamworks Complete](https://assetstore.unity.com/packages/tools/integration/steamworks-v2-complete-190316)**
-**NOTE: Heathen's Steamworks is built on and includes Steamworks.NET so if you already have that installed you must fully remove it first**
+Unity Package Manager support is still fairly new but you can use it like so:
+
+1. Open the Package Manager
+2. Click the "+" (plus) button located in the upper left of the window
+3. Select the "Add package from git URL..." option
+4. Enter the following URL:
+    `https://github.com/Chykary/FizzySteamworks.git?path=/com.mirror.steamworks.net`
+5. Click the "Add" button and wait several seconds for the system to download and install the Steamworks.NET package from GitHub.
+
+### Manual
+
+Fewer steps but more error prone and subject to being out of date with the latest changes:
+
+1. Download the latest [unitypackage](https://github.com/Chykary/FizzySteamworks/releases) from the release section.
+2. Import the package into Unity.
+
 
 ## Setting Up
 
-1. Install Mirror **(Requires Mirror 35.0+)** from the Unity asset store **[Download Mirror](https://assetstore.unity.com/packages/tools/network/mirror-129321)**.
-2. Install FizzySteamworks **[unitypackage](https://github.com/Chykary/FizzySteamworks/releases)** from the release section.
-3. In your **"NetworkManager"** object replace **"Telepathy"** script with **"FizzySteamworks"** script.
+1. Install Steamworks.NET instructions can be found [here](https://github.com/rlabrecque/Steamworks.NET).
+2. Install Mirror **(Requires Mirror 35.0+)** from the Unity asset store **[Download Mirror](https://assetstore.unity.com/packages/tools/network/mirror-129321)**.
+3. Install FizzySteamworks from package manager as discribed in the above Install step.
+3. In your **"NetworkManager"** object replace **"KCP"** with **"FizzySteamworks"**.
 
 ## Host
 To be able to have your game working you need to make sure you have Steam running in the background and that the Steam API initalized correctly. You can then call StartHost and use Mirror as you normally would.
