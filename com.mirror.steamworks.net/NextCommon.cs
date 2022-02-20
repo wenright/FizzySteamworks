@@ -18,7 +18,11 @@ namespace Mirror.FizzySteam
             GCHandle pinnedArray = GCHandle.Alloc(data, GCHandleType.Pinned);
             IntPtr pData = pinnedArray.AddrOfPinnedObject();
             int sendFlag = channelId == Channels.Unreliable ? Constants.k_nSteamNetworkingSend_Unreliable : Constants.k_nSteamNetworkingSend_Reliable;
+#if UNITY_SERVER
+            EResult res = SteamGameServerNetworkingSockets.SendMessageToConnection(conn, pData, (uint)data.Length, sendFlag, out long _);
+#else
             EResult res = SteamNetworkingSockets.SendMessageToConnection(conn, pData, (uint)data.Length, sendFlag, out long _);
+#endif
             if (res != EResult.k_EResultOK)
             {
                 Debug.LogWarning($"Send issue: {res}");
