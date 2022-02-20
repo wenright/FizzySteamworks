@@ -229,7 +229,7 @@ namespace Mirror.FizzySteam
 
         public void Shutdown()
         {
-#if UNITY_SERVER || true
+#if UNITY_SERVER
             SteamGameServerNetworkingSockets.CloseListenSocket(listenSocket);
 #else
             SteamNetworkingSockets.CloseListenSocket(listenSocket);
