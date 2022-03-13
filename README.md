@@ -31,7 +31,7 @@ You can install [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) y
 
 ## Installation
 You have two options when installing the transport.
-    ### Unity Package Manager
+### Unity Package Manager
 ![Package Manager Add from Git URL](https://3689240098-files.gitbook.io/~/files/v0/b/gitbook-28427.appspot.com/o/assets%2F-MZWu8yFOWhCYCMkJFmR%2F-MkVzpUlxYzzEgvdinNv%2F-MkW6tqgBr-8XK0-iKQ2%2Fimage.png?alt=media&token=8a6451ed-473b-4a18-9385-cd87e41e774a)
 1) Open the package manager and click the '+' (plus) button located in the upper left of the window
 2) Select `Add package from git URL...` when prompted provide the following URL:  
