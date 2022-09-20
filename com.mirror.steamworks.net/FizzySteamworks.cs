@@ -189,7 +189,11 @@ namespace Mirror.FizzySteam
             var steamBuilder = new UriBuilder
             {
                 Scheme = STEAM_SCHEME,
+#if UNITY_SERVER
+                Host = SteamGameServer.GetSteamID().m_SteamID.ToString()
+#else
                 Host = SteamUser.GetSteamID().m_SteamID.ToString()
+#endif
             };
 
             return steamBuilder.Uri;
