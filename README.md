@@ -17,7 +17,7 @@ FizzySteamworks relies on Steamworks.NET to communicate with the [Steamworks API
 
 You have two options to solve this dependency
 #### A) [Steamworks Foundaiton](https://github.com/heathen-engineering/SteamworksFoundation)
-You can use Heathen's [Steamworks Foundaiton](https://github.com/heathen-engineering/SteamworksFoundation) which is an open source Unity Asset that integrats [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) into the Unity engine handling most things for you. 
+You can use Heathen's [Steamworks Foundaiton](https://github.com/heathen-engineering/SteamworksFoundation) which is an open source Unity Asset that integrates [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) into the Unity engine handling most things for you. 
 #### B) Raw [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET)
 You can install [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) your self and use your own code to initlaize and manage it. Note [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) is a C# wrapper around the [Steamworks API](https://partner.steamgames.com/doc/sdk), not a plug-n-play asset for integrating Steam API. 
 > Steamworks.NET is just a C# wrapper, It does not handle configuraiton, initalization or other aspects around the use of Steam API for you.
