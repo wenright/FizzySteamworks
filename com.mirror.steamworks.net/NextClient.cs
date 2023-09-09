@@ -153,6 +153,11 @@ namespace Mirror.FizzySteam
             cancelToken?.Cancel();
             Dispose();
 
+            if (Connected)
+            {
+                InternalDisconnect();
+            }
+
             if (HostConnection.m_HSteamNetConnection != 0)
             {
                 Debug.Log("Sending Disconnect message");
